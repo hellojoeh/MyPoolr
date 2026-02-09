@@ -10,8 +10,8 @@ name = "mypoolr-bot-prod"
 # BACKEND_API_URL
 # BACKEND_API_KEY
 
-# KV namespace for state management (optional)
-[[kv_namespaces]]
-binding = "BOT_STATE"
-id = "your-kv-namespace-id"
-preview_id = "your-preview-kv-namespace-id"
+# KV namespace for state management (optional - commented out for now)
+# [[kv_namespaces]]
+# binding = "BOT_STATE"
+# id = "your-kv-namespace-id"
+# preview_id = "your-preview-kv-namespace-id"
