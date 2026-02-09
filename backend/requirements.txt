@@ -1,14 +1,14 @@
 # MyPoolr Circles Backend - Production Dependencies
-# Minimal version constraints - let pip resolve conflicts automatically
+# Simplified stack without supabase to avoid dependency conflicts
 
-# Core Framework - remove exact versions, let pip find compatible set
+# Core Framework
 fastapi
 uvicorn[standard]
 pydantic
 
-# Database & Storage - let pip resolve supabase dependencies
-supabase
+# Database - direct PostgreSQL connection instead of supabase
 psycopg2-binary
+sqlalchemy
 
 # Cache & Message Queue
 redis
