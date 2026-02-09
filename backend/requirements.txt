@@ -1,39 +1,39 @@
 # MyPoolr Circles Backend - Production Dependencies
-# Render-compatible versions (Python 3.13 compatible)
+# Loosened version constraints to avoid dependency conflicts
 
-# Core Framework - older versions compatible with Python 3.13
-fastapi==0.68.2
-uvicorn[standard]==0.15.0
-pydantic==1.8.2
+# Core Framework - let pip resolve compatible versions
+fastapi>=0.68.0,<1.0.0
+uvicorn[standard]>=0.15.0
+pydantic>=1.8.0,<2.0.0
 
 # Database & Storage
-supabase==2.0.2
-psycopg2-binary==2.9.9
+supabase>=2.0.0,<3.0.0
+psycopg2-binary>=2.9.0
 
 # Cache & Message Queue
-redis==5.0.1
-celery==5.3.4
+redis>=5.0.0
+celery>=5.3.0
 
-# HTTP & Networking
-httpx==0.24.1
-requests==2.31.0
-urllib3==2.1.0
+# HTTP & Networking - let pip resolve httpx version compatible with supabase
+httpx>=0.24.0,<0.25.0
+requests>=2.31.0
+urllib3>=2.0.0
 
 # Security & Authentication
-cryptography==41.0.7
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+cryptography>=41.0.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.0
 
 # Environment & Configuration
-python-dotenv==1.0.0
+python-dotenv>=1.0.0
 
 # Monitoring & Logging
-psutil==5.9.6
-structlog==23.2.0
+psutil>=5.9.0
+structlog>=23.0.0
 
 # Date & Time
-python-dateutil==2.8.2
+python-dateutil>=2.8.0
 
 # Validation & Parsing
-email-validator==1.3.1
-phonenumbers==8.13.26
+email-validator>=1.3.0
+phonenumbers>=8.13.0
