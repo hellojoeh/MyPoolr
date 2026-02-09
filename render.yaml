@@ -7,7 +7,7 @@ services:
     name: mypoolr-backend
     runtime: python
     rootDir: backend
-    pythonVersion: "3.11"
+    pythonVersion: "3.10"
     buildCommand: pip install -r requirements.txt
     startCommand: python main.py
     envVars:
@@ -29,7 +29,7 @@ services:
     name: mypoolr-bot
     runtime: python
     rootDir: bot
-    pythonVersion: "3.11"
+    pythonVersion: "3.10"
     buildCommand: pip install -r requirements.txt
     startCommand: python main.py
     envVars:
