@@ -1,39 +1,39 @@
 # MyPoolr Circles Backend - Production Dependencies
-# Loosened version constraints to avoid dependency conflicts
+# Minimal version constraints - let pip resolve conflicts automatically
 
-# Core Framework - let pip resolve compatible versions
-fastapi>=0.68.0,<1.0.0
-uvicorn[standard]>=0.15.0
-pydantic>=1.8.0,<2.0.0
+# Core Framework - remove exact versions, let pip find compatible set
+fastapi
+uvicorn[standard]
+pydantic
 
-# Database & Storage
-supabase>=2.0.0,<3.0.0
-psycopg2-binary>=2.9.0
+# Database & Storage - let pip resolve supabase dependencies
+supabase
+psycopg2-binary
 
 # Cache & Message Queue
-redis>=5.0.0
-celery>=5.3.0
+redis
+celery
 
-# HTTP & Networking - let pip resolve httpx version compatible with supabase
-httpx>=0.24.0,<0.25.0
-requests>=2.31.0
-urllib3>=2.0.0
+# HTTP & Networking
+httpx
+requests
+urllib3
 
 # Security & Authentication
-cryptography>=41.0.0
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.0
+cryptography
+python-jose[cryptography]
+passlib[bcrypt]
 
 # Environment & Configuration
-python-dotenv>=1.0.0
+python-dotenv
 
 # Monitoring & Logging
-psutil>=5.9.0
-structlog>=23.0.0
+psutil
+structlog
 
 # Date & Time
-python-dateutil>=2.8.0
+python-dateutil
 
 # Validation & Parsing
-email-validator>=1.3.0
-phonenumbers>=8.13.0
+email-validator
+phonenumbers
