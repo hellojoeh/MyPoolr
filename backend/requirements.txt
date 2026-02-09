@@ -1,10 +1,11 @@
 # MyPoolr Circles Backend - Production Dependencies
-# Simplified stack without supabase to avoid dependency conflicts
+# Complete dependency list for successful deployment
 
 # Core Framework
 fastapi
 uvicorn[standard]
 pydantic
+pydantic-settings
 
 # Database - direct PostgreSQL connection instead of supabase
 psycopg2-binary
