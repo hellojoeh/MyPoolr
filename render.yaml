@@ -22,19 +22,6 @@ services:
       # for maximum security (not in this file)
     healthCheckPath: /health
     autoDeploy: false  # Manual deployment for security
-    
-  # Bot Background Worker Service  
-  - type: worker
-    name: mypoolr-bot
-    runtime: python
-    rootDir: bot
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
-    envVars:
-      - key: ENVIRONMENT
-        value: production
-      # All sensitive environment variables set via dashboard
-    autoDeploy: false  # Manual deployment for security
 
   # Redis Database
   - type: redis
