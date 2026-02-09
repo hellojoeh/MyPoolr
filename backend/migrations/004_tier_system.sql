@@ -53,6 +53,6 @@ CREATE POLICY tier_upgrade_requests_policy ON tier_upgrade_requests
 -- Insert default starter tier for existing admins
 INSERT INTO tier_subscriptions (admin_id, tier, subscription_start, is_active)
 SELECT DISTINCT admin_id, 'starter', NOW(), TRUE
-FROM mypoolrs
+FROM mypoolr
 WHERE admin_id NOT IN (SELECT admin_id FROM tier_subscriptions WHERE is_active = TRUE)
 ON CONFLICT DO NOTHING;

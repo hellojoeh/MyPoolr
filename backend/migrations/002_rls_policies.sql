@@ -127,7 +127,13 @@ CREATE POLICY "Admins can delete transactions in their groups" ON transaction
 
 -- Service role bypass (for backend operations)
 -- Create a service role that can bypass RLS for system operations
-CREATE ROLE service_role;
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'service_role') THEN
+        CREATE ROLE service_role;
+    END IF;
+END $$;
+
 GRANT USAGE ON SCHEMA public TO service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
