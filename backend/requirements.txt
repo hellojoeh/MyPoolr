@@ -15,7 +15,7 @@ redis==5.0.1
 celery==5.3.4
 
 # HTTP & Networking
-httpx==0.25.2
+httpx==0.24.1
 requests==2.31.0
 urllib3==2.1.0
 
