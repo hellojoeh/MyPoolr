@@ -1,0 +1,251 @@
+# MyPoolr Circles - Security-First .gitignore
+
+# ========================================
+# CRITICAL SECURITY FILES - NEVER COMMIT
+# ========================================
+
+# Environment files with secrets
+*.env
+*.env.*
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+
+# Generated security keys
+production_keys_*.txt
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Database credentials
+database.url
+db_credentials.json
+
+# API keys and tokens
+api_keys.txt
+tokens.json
+secrets.json
+
+# Telegram bot tokens
+bot_token.txt
+telegram_*.json
+
+# Payment provider credentials
+mpesa_*.json
+payment_credentials.*
+
+# ========================================
+# PYTHON SECURITY & CACHE
+# ========================================
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ========================================
+# DEVELOPMENT & EDITOR FILES
+# ========================================
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ========================================
+# LOGS & TEMPORARY FILES
+# ========================================
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary folders
+tmp/
+temp/
+
+# ========================================
+# DATABASE & REDIS
+# ========================================
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Redis dumps
+dump.rdb
+
+# ========================================
+# DEPLOYMENT & INFRASTRUCTURE
+# ========================================
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Docker
+.dockerignore
+
+# Kubernetes
+*.kubeconfig
+
+# ========================================
+# MONITORING & ANALYTICS
+# ========================================
+
+# Sentry
+.sentryclirc
+
+# Analytics
+analytics.json
+metrics.json
+
+# ========================================
+# BACKUP & ARCHIVE FILES
+# ========================================
+
+# Compressed files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# ========================================
+# CUSTOM PROJECT FILES
+# ========================================
+
+# MyPoolr specific
+/test_data/
+/sample_data/
+/debug_logs/
+/performance_logs/
+
+# Generated documentation
+/docs/build/
+
+# Local configuration overrides
+local_config.py
+local_settings.py
+
+# Test artifacts
+test_results/
+test_reports/
+
+# ========================================
+# SECURITY SCANNING RESULTS
+# ========================================
+
+# Security scan results
+security_report.*
+vulnerability_scan.*
+audit_results.*
+
+# Dependency check results
+dependency-check-report.*
+
+# ========================================
+# NEVER COMMIT THESE PATTERNS
+# ========================================
+
+# Any file containing "secret", "key", "token", "password"
+*secret*
+*key*
+*token*
+*password*
+*credential*
+
+# Except for example/template files
+!*.example
+!*.template
+!*_example.*
+!*_template.*

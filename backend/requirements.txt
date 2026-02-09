@@ -1,0 +1,45 @@
+# MyPoolr Circles Backend - Production Dependencies
+# Security-focused dependency versions with known vulnerabilities patched
+
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Database & Storage
+supabase==2.0.2
+psycopg2-binary==2.9.9
+
+# Cache & Message Queue
+redis==5.0.1
+celery==5.3.4
+
+# HTTP & Networking
+httpx==0.25.2
+requests==2.31.0
+urllib3==2.1.0
+
+# Security & Authentication
+cryptography==41.0.8
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Environment & Configuration
+python-dotenv==1.0.0
+
+# Monitoring & Logging
+psutil==5.9.6
+structlog==23.2.0
+
+# Date & Time
+python-dateutil==2.8.2
+
+# Validation & Parsing
+email-validator==2.1.0
+phonenumbers==8.13.26
+
+# Development & Testing (only in dev)
+# pytest==7.4.3
+# pytest-asyncio==0.21.1
+# hypothesis==6.92.1

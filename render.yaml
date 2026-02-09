@@ -1,0 +1,41 @@
+# MyPoolr Circles - Render Deployment Configuration
+# This file defines the infrastructure for secure production deployment
+
+services:
+  # Backend API Service
+  - type: web
+    name: mypoolr-backend
+    runtime: python3
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: API_PORT
+        value: 8000
+      - key: DEBUG
+        value: false
+      # All other environment variables will be set via Render dashboard
+      # for maximum security (not in this file)
+    healthCheckPath: /health
+    autoDeploy: false  # Manual deployment for security
+    
+  # Bot Background Worker Service  
+  - type: worker
+    name: mypoolr-bot
+    runtime: python3
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      # All sensitive environment variables set via dashboard
+    autoDeploy: false  # Manual deployment for security
+
+  # Redis Database
+  - type: redis
+    name: mypoolr-redis
+    plan: starter  # Free tier
+    maxmemoryPolicy: allkeys-lru

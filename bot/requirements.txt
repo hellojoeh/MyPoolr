@@ -1,0 +1,30 @@
+# MyPoolr Circles Bot - Production Dependencies
+# Security-focused versions for Telegram bot
+
+# Telegram Bot Framework
+python-telegram-bot==20.7
+
+# HTTP & Networking
+httpx==0.25.2
+requests==2.31.0
+urllib3==2.1.0
+
+# Cache & State Management
+redis==5.0.1
+
+# Configuration & Environment
+python-dotenv==1.0.0
+pydantic==2.5.0
+
+# Logging & Monitoring
+loguru==0.7.2
+structlog==23.2.0
+
+# Date & Time Utilities
+python-dateutil==2.8.2
+
+# Security
+cryptography==41.0.8
+
+# Validation
+phonenumbers==8.13.26
