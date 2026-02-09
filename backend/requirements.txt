@@ -1,11 +1,10 @@
 # MyPoolr Circles Backend - Production Dependencies
-# Security-focused dependency versions with known vulnerabilities patched
+# Render-compatible versions (avoiding Rust compilation issues)
 
 # Core Framework
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-pydantic==2.4.2
-pydantic-settings==2.0.3
+pydantic==1.10.13
 
 # Database & Storage
 supabase==2.0.2
@@ -38,8 +37,3 @@ python-dateutil==2.8.2
 # Validation & Parsing
 email-validator==2.1.0
 phonenumbers==8.13.26
-
-# Development & Testing (only in dev)
-# pytest==7.4.3
-# pytest-asyncio==0.21.1
-# hypothesis==6.92.1
