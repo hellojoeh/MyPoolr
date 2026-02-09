@@ -247,9 +247,9 @@ class IntegrationManager:
             
             # Check if both parties have confirmed
             if transaction["sender_confirmed_at"] and transaction["recipient_confirmed_at"]:
-                # Mark transaction as completed
+                # Mark transaction as both_confirmed
                 await self.db_manager.client.table("transactions").update({
-                    "confirmation_status": "completed",
+                    "confirmation_status": "both_confirmed",
                     "completed_at": datetime.utcnow().isoformat()
                 }).eq("id", transaction_id).execute()
                 

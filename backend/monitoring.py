@@ -203,8 +203,8 @@ class SystemMonitor:
                 transaction_result = db_manager.service_client.table("transaction").select("id", count="exact").execute()
                 metrics["db_transaction_count"] = float(transaction_result.count or 0)
                 
-                # Pending transactions
-                pending_result = db_manager.service_client.table("transaction").select("id", count="exact").neq("confirmation_status", "completed").execute()
+                # Pending transactions (not both_confirmed)
+                pending_result = db_manager.service_client.table("transaction").select("id", count="exact").neq("confirmation_status", "both_confirmed").execute()
                 metrics["db_pending_transactions"] = float(pending_result.count or 0)
                 
             except Exception as e:

@@ -318,6 +318,7 @@ class SystemRecoveryManager:
                 "name": f"health_check_test_{datetime.utcnow().timestamp()}",
                 "admin_id": 0,
                 "contribution_amount": 1,
+                "rotation_frequency": "weekly",
                 "member_limit": 2,
                 "tier": "starter"
             }

@@ -282,13 +282,13 @@ class DataConsistencyChecker:
         recipient_confirmed = transaction.get("recipient_confirmed_at")
         confirmation_status = transaction.get("confirmation_status")
         
-        if confirmation_status == "completed" and (not sender_confirmed or not recipient_confirmed):
+        if confirmation_status == "both_confirmed" and (not sender_confirmed or not recipient_confirmed):
             self.issues.append(ConsistencyIssue(
                 issue_type=ConsistencyIssueType.INVALID_STATE,
                 severity=ConsistencyCheckSeverity.ERROR,
                 entity_type="transaction",
                 entity_id=transaction_id,
-                description="Transaction marked completed but missing confirmations",
+                description="Transaction marked both_confirmed but missing confirmations",
                 details={
                     "confirmation_status": confirmation_status,
                     "sender_confirmed_at": sender_confirmed,
