@@ -5,7 +5,8 @@ services:
   # Backend API Service
   - type: web
     name: mypoolr-backend
-    runtime: python3
+    runtime: python
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: python main.py
     envVars:
@@ -25,7 +26,8 @@ services:
   # Bot Background Worker Service  
   - type: worker
     name: mypoolr-bot
-    runtime: python3
+    runtime: python
+    rootDir: bot
     buildCommand: pip install -r requirements.txt
     startCommand: python main.py
     envVars:
@@ -39,3 +41,4 @@ services:
     name: mypoolr-redis
     plan: starter  # Free tier
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []  # Empty list allows all IPs - configure specific IPs in dashboard for security
