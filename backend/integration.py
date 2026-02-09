@@ -67,8 +67,9 @@ class IntegrationManager:
             health_check = await self.db_manager.client.table("mypoolr").select("id").limit(1).execute()
             logger.info("Database connection verified")
         except Exception as e:
-            logger.error(f"Database initialization failed: {e}")
-            raise
+            logger.warning(f"Database initialization failed: {e}")
+            logger.warning("Application will start but database operations may fail")
+            # Don't raise - allow app to start even if tables don't exist yet
     
     async def _initialize_payment_services(self):
         """Initialize and register payment service providers."""
