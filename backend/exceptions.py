@@ -184,12 +184,12 @@ class ExternalServiceError(MyPoolrException):
 class SystemError(MyPoolrException):
     """Raised when system-level errors occur."""
     
-    def __init__(self, message: str, component: str = None, **kwargs):
+    def __init__(self, message: str, component: str = None, severity: ErrorSeverity = ErrorSeverity.CRITICAL, **kwargs):
         super().__init__(
             message=message,
             error_code="SYSTEM_ERROR",
             category=ErrorCategory.SYSTEM,
-            severity=ErrorSeverity.CRITICAL,
+            severity=severity,
             **kwargs
         )
         self.component = component

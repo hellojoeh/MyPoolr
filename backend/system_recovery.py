@@ -87,8 +87,7 @@ class SystemRecoveryManager:
             logger.error(f"Failed to initialize recovery system: {str(e)}")
             raise SystemError(
                 message=f"Recovery system initialization failed: {str(e)}",
-                component="recovery_manager",
-                severity=ErrorSeverity.CRITICAL
+                component="recovery_manager"
             )
     
     async def health_check(self) -> Dict[str, Any]:
@@ -225,8 +224,8 @@ class SystemRecoveryManager:
             member_result = self.db.service_client.table("member").select("id", count="exact").execute()
             transaction_result = self.db.service_client.table("transaction").select("id", count="exact").execute()
             
-            # Get pending transactions
-            pending_result = self.db.service_client.table("transaction").select("id", count="exact").neq("confirmation_status", "completed").execute()
+            # Get pending transactions (not both_confirmed)
+            pending_result = self.db.service_client.table("transaction").select("id", count="exact").neq("confirmation_status", "both_confirmed").execute()
             
             # Calculate checksum (simplified)
             checksum_data = {
