@@ -1,0 +1,22 @@
+services:
+  - type: worker
+    name: mypoolr-telegram-bot
+    env: python
+    region: oregon
+    plan: free
+    rootDir: bot
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        value: 8574272408:AAH7w3cfFwS7AXaSHi9bUmPq_KVPGc3PwQ4
+      - key: BACKEND_API_URL
+        value: https://mypoolr-backend.onrender.com
+      - key: BACKEND_API_KEY
+        value: rnd_eGhD9lbNHdkSY0r922jaMpLcZctq
+      - key: REDIS_URL
+        value: redis://default:dffmE5aUSNeNhkx0dV0LbryVJAA1ujRe@redis-10445.crce218.eu-central-1-1.ec2.cloud.redislabs.com:10445
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
