@@ -2,7 +2,7 @@
 nixPkgs = ['python310']
 
 [phases.install]
-cmds = ['pip install -r bot/requirements.txt']
+cmds = ['python3 -m pip install -r bot/requirements.txt']
 
 [start]
-cmd = 'python bot/main.py'
+cmd = 'python3 bot/main.py'
