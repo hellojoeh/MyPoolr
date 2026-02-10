@@ -8,6 +8,7 @@ from utils.button_manager import ButtonManager
 from utils.state_manager import StateManager, ConversationState
 from utils.feedback_system import VisualFeedbackManager, InteractionFeedback
 from utils.formatters import MessageFormatter, EmojiHelper
+from utils.backend_client import BackendClient
 
 # Import member management handlers
 from .member_management import (
@@ -88,6 +89,11 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await handle_my_schedule(update, context)
     elif callback_data.startswith("join_invitation:"):
         await handle_join_invitation(update, context, callback_data)
+    # MyPoolr management callbacks
+    elif callback_data.startswith("share_link:"):
+        await handle_share_link(update, context, callback_data)
+    elif callback_data.startswith("manage_group:"):
+        await handle_manage_group(update, context, callback_data)
     # Member management callbacks
     elif callback_data == "manage_members":
         await handle_manage_members(update, context)
@@ -774,6 +780,102 @@ Ready to join this group?
     
     await update.callback_query.edit_message_text(
         text=join_text,
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+
+
+async def handle_share_link(update: Update, context: ContextTypes.DEFAULT_TYPE, callback_data: str) -> None:
+    """Handle share invitation link."""
+    button_manager: ButtonManager = context.bot_data.get("button_manager")
+    invitation_code = callback_data.split(":", 1)[1]
+    
+    # Get bot username for the link
+    bot = context.bot
+    bot_username = (await bot.get_me()).username
+    
+    share_text = f"""
+📤 **Share Your MyPoolr Group**
+
+Invitation Code: `{invitation_code}`
+
+Share this link with people you want to invite:
+https://t.me/{bot_username}?start={invitation_code}
+
+Or share the code directly and they can use:
+/join {invitation_code}
+
+*Tips for inviting members:*
+• Only invite people you trust
+• Explain the commitment required
+• Make sure they understand the security deposit
+• Verify they can afford the contributions
+
+Ready to invite more members?
+    """.strip()
+    
+    grid = button_manager.create_grid()
+    grid.add_row([
+        button_manager.create_button("👥 Manage Group", f"manage_group:{invitation_code}", emoji="👥")
+    ])
+    grid.add_row([
+        button_manager.create_button("📋 My Groups", "my_groups", emoji="📋"),
+        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+    ])
+    
+    keyboard = button_manager.build_keyboard(grid)
+    
+    await update.callback_query.edit_message_text(
+        text=share_text,
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+
+
+async def handle_manage_group(update: Update, context: ContextTypes.DEFAULT_TYPE, callback_data: str) -> None:
+    """Handle group management."""
+    button_manager: ButtonManager = context.bot_data.get("button_manager")
+    backend_client: BackendClient = context.bot_data.get("backend_client")
+    invitation_code = callback_data.split(":", 1)[1]
+    
+    # TODO: Fetch actual group details from backend
+    # For now, show a placeholder
+    
+    manage_text = f"""
+👥 **Manage Your Group**
+
+Invitation Code: `{invitation_code}`
+
+*Group Management Options:*
+
+📊 View member list and status
+💰 Track contributions and payments
+📅 View rotation schedule
+🔒 Manage security deposits
+📤 Share invitation link
+⚙️ Update group settings
+
+What would you like to do?
+    """.strip()
+    
+    grid = button_manager.create_grid()
+    grid.add_row([
+        button_manager.create_button("👥 View Members", "view_member_list", emoji="👥"),
+        button_manager.create_button("💰 Contributions", "contribution_tracking", emoji="💰")
+    ])
+    grid.add_row([
+        button_manager.create_button("📅 Schedule", "my_schedule", emoji="📅"),
+        button_manager.create_button("📤 Share Link", f"share_link:{invitation_code}", emoji="📤")
+    ])
+    grid.add_row([
+        button_manager.create_button("📋 My Groups", "my_groups", emoji="📋"),
+        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+    ])
+    
+    keyboard = button_manager.build_keyboard(grid)
+    
+    await update.callback_query.edit_message_text(
+        text=manage_text,
         reply_markup=keyboard,
         parse_mode="Markdown"
     )
