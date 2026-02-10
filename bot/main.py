@@ -91,20 +91,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    import sys
-    
-    # Check if there's already a running event loop (Railway environment)
     try:
-        loop = asyncio.get_running_loop()
-        # If we get here, there's already a loop running
-        logger.info("Using existing event loop")
-        loop.create_task(main())
-    except RuntimeError:
-        # No loop running, create one
-        try:
-            asyncio.run(main())
-        except KeyboardInterrupt:
-            logger.info("Bot stopped by user")
-        except RuntimeError as e:
-            if "event loop" not in str(e).lower():
-                raise
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
