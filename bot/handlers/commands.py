@@ -267,6 +267,89 @@ Or tap the button below to paste an invitation link:
     )
 
 
+async def link_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /link command to link a Telegram group to a MyPoolr."""
+    # Check if command is used in a group
+    if update.effective_chat.type not in ['group', 'supergroup']:
+        await update.message.reply_text(
+            "⚠️ This command can only be used in a Telegram group.\n\n"
+            "Please:\n"
+            "1. Create a Telegram group\n"
+            "2. Add this bot to the group\n"
+            "3. Make the bot an admin\n"
+            "4. Use /link <mypoolr_id> in the group"
+        )
+        return
+    
+    # Check if bot is admin
+    bot_member = await update.effective_chat.get_member(context.bot.id)
+    if bot_member.status not in ['administrator', 'creator']:
+        await update.message.reply_text(
+            "⚠️ Please make me an admin in this group first.\n\n"
+            "I need admin rights to:\n"
+            "• Send notifications\n"
+            "• Manage group settings\n"
+            "• Pin important messages"
+        )
+        return
+    
+    # Check if MyPoolr ID is provided
+    if not context.args or len(context.args) == 0:
+        await update.message.reply_text(
+            "⚠️ Please provide the MyPoolr ID.\n\n"
+            "Usage: /link <mypoolr_id>\n\n"
+            "Example: /link 123e4567-e89b-12d3-a456-426614174000"
+        )
+        return
+    
+    mypoolr_id = context.args[0]
+    telegram_group_id = update.effective_chat.id
+    telegram_group_name = update.effective_chat.title
+    user_id = update.effective_user.id
+    
+    backend_client: BackendClient = context.bot_data.get("backend_client")
+    
+    try:
+        # Call backend to link the group
+        result = await backend_client.link_telegram_group(
+            mypoolr_id=mypoolr_id,
+            telegram_group_id=telegram_group_id,
+            telegram_group_name=telegram_group_name,
+            linked_by=user_id
+        )
+        
+        if result.get('success'):
+            mypoolr_name = result.get('mypoolr_name', 'MyPoolr')
+            await update.message.reply_text(
+                f"✅ *Group Linked Successfully!*\n\n"
+                f"This Telegram group is now linked to:\n"
+                f"📊 {MessageFormatter.escape_markdown(mypoolr_name)}\n\n"
+                f"*What's next:*\n"
+                f"• Members can join using invitation links\n"
+                f"• Bot will send notifications here\n"
+                f"• Use /status to see group details\n"
+                f"• Use /help for available commands",
+                parse_mode="Markdown"
+            )
+        else:
+            error_msg = result.get('message', result.get('error', 'Unknown error'))
+            await update.message.reply_text(
+                f"❌ *Linking Failed*\n\n{error_msg}\n\n"
+                f"Please check:\n"
+                f"• MyPoolr ID is correct\n"
+                f"• You are the admin of the MyPoolr\n"
+                f"• MyPoolr is not already linked",
+                parse_mode="Markdown"
+            )
+    
+    except Exception as e:
+        logger.error(f"Error linking Telegram group: {e}")
+        await update.message.reply_text(
+            "❌ An error occurred while linking the group.\n\n"
+            "Please try again or contact support."
+        )
+
+
 def setup_command_handlers(application) -> None:
     """Set up command handlers."""
     application.add_handler(CommandHandler("start", start_command))
@@ -274,5 +357,6 @@ def setup_command_handlers(application) -> None:
     application.add_handler(CommandHandler("status", status_command))
     application.add_handler(CommandHandler("create", create_command))
     application.add_handler(CommandHandler("join", join_command))
+    application.add_handler(CommandHandler("link", link_command))
     
     logger.info("Command handlers registered")

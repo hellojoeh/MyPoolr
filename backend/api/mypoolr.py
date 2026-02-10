@@ -331,3 +331,121 @@ async def deactivate_invitation(invitation_id: str, admin_id: int):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+# Telegram Group Linking Endpoints
+
+class LinkTelegramGroupRequest(BaseModel):
+    """Request model for linking Telegram group."""
+    telegram_group_id: int
+    telegram_group_name: str
+    linked_by: int
+
+
+@router.post("/{mypoolr_id}/link-telegram")
+async def link_telegram_group(mypoolr_id: UUID, request: LinkTelegramGroupRequest):
+    """Link a Telegram group to a MyPoolr."""
+    try:
+        # Verify MyPoolr exists and user is admin
+        result = db_manager.db.service_client.table("mypoolr").select("*").eq("id", str(mypoolr_id)).eq("admin_id", request.linked_by).execute()
+        
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="MyPoolr not found or you are not the admin"
+            )
+        
+        mypoolr = result.data[0]
+        
+        # Check if already linked
+        if mypoolr.get('telegram_group_id'):
+            raise HTTPException(
+                status_code=400,
+                detail="This MyPoolr is already linked to a Telegram group"
+            )
+        
+        # Update MyPoolr with Telegram group info
+        update_result = db_manager.db.service_client.table("mypoolr").update({
+            "telegram_group_id": str(request.telegram_group_id),
+            "telegram_group_name": request.telegram_group_name
+        }).eq("id", str(mypoolr_id)).execute()
+        
+        if not update_result.data:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to link Telegram group"
+            )
+        
+        return {
+            "success": True,
+            "message": "Telegram group linked successfully",
+            "mypoolr_name": mypoolr['name'],
+            "telegram_group_id": request.telegram_group_id,
+            "telegram_group_name": request.telegram_group_name
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to link Telegram group: {str(e)}")
+
+
+@router.delete("/{mypoolr_id}/unlink-telegram")
+async def unlink_telegram_group(mypoolr_id: UUID, admin_id: int):
+    """Unlink a Telegram group from a MyPoolr."""
+    try:
+        # Verify MyPoolr exists and user is admin
+        result = db_manager.db.service_client.table("mypoolr").select("*").eq("id", str(mypoolr_id)).eq("admin_id", admin_id).execute()
+        
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="MyPoolr not found or you are not the admin"
+            )
+        
+        # Update MyPoolr to remove Telegram group info
+        update_result = db_manager.db.service_client.table("mypoolr").update({
+            "telegram_group_id": None,
+            "telegram_group_name": None
+        }).eq("id", str(mypoolr_id)).execute()
+        
+        if not update_result.data:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to unlink Telegram group"
+            )
+        
+        return {
+            "success": True,
+            "message": "Telegram group unlinked successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to unlink Telegram group: {str(e)}")
+
+
+@router.get("/{mypoolr_id}/telegram-group")
+async def get_telegram_group_info(mypoolr_id: UUID):
+    """Get linked Telegram group information."""
+    try:
+        result = db_manager.db.service_client.table("mypoolr").select("telegram_group_id, telegram_group_name").eq("id", str(mypoolr_id)).execute()
+        
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(status_code=404, detail="MyPoolr not found")
+        
+        mypoolr = result.data[0]
+        
+        return {
+            "success": True,
+            "telegram_group_id": mypoolr.get('telegram_group_id'),
+            "telegram_group_name": mypoolr.get('telegram_group_name'),
+            "is_linked": bool(mypoolr.get('telegram_group_id'))
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get Telegram group info: {str(e)}")

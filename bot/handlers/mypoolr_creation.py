@@ -730,23 +730,39 @@ async def handle_creation_confirmation(update: Update, context: ContextTypes.DEF
 
 Your "{MessageFormatter.escape_markdown(user_data.get('name', 'MyPoolr'))}" group is ready!
 
-🔗 *Invitation Details:*
-Code: `{invitation_code}`
-Link: {invitation_link}
+📱 *IMPORTANT: Create Telegram Group*
 
-📤 *Share with Members:*
-Send the link above to invite members to your group.
+Since bots cannot create Telegram groups, please follow these steps:
 
-📋 *What's Next:*
-1. Share invitation link with potential members
-2. Members will join and pay security deposits
-3. You can start the first rotation when ready
-4. Manage your group from "My Groups" menu
+1️⃣ *Create a Telegram Group:*
+   • Open Telegram and create a new group
+   • Name it: {MessageFormatter.escape_markdown(user_data.get('name', 'MyPoolr'))}
+   • Add this bot (@{bot_username}) to the group
+   • Make the bot an admin
 
-🎯 *Group Summary:*
+2️⃣ *Invite Members:*
+   Share this invitation link with members:
+   {invitation_link}
+   
+   Or share the code: `{invitation_code}`
+
+3️⃣ *Link the Group:*
+   Once you add the bot to your Telegram group, send this command in the group:
+   `/link {mypoolr_id}`
+
+📋 *Group Details:*
 • Contribution: {MessageFormatter.format_currency(user_data.get('amount', 0))}
 • Frequency: {user_data.get('frequency', 'Unknown').title()}
 • Max Members: {user_data.get('member_limit', 0)}
+• Country: {user_data.get('country', 'KE')}
+
+💡 *Why create a Telegram group?*
+• Real-time communication with members
+• Share updates and reminders
+• Discuss contributions and schedules
+• Build community trust
+
+*Note:* The MyPoolr system works independently, but having a Telegram group enhances member communication.
             """.strip()
             
             # Create action buttons

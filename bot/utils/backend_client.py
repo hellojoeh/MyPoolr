@@ -155,6 +155,20 @@ class BackendClient:
             "token": invitation_code
         })
     
+    async def link_telegram_group(
+        self,
+        mypoolr_id: str,
+        telegram_group_id: int,
+        telegram_group_name: str,
+        linked_by: int
+    ) -> Dict[str, Any]:
+        """Link a Telegram group to a MyPoolr."""
+        return await self._make_request("POST", f"/mypoolr/{mypoolr_id}/link-telegram", data={
+            "telegram_group_id": telegram_group_id,
+            "telegram_group_name": telegram_group_name,
+            "linked_by": linked_by
+        })
+    
     # Member operations
     async def join_mypoolr(self, join_data: Dict[str, Any]) -> Dict[str, Any]:
         """Join a MyPoolr group."""
