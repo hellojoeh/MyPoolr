@@ -167,7 +167,7 @@ class TierManagementService:
     async def get_admin_tier(self, admin_id: int) -> TierLevel:
         """Get current tier for an admin."""
         try:
-            result = await self.db.client.table("tier_subscriptions").select("*").eq("admin_id", admin_id).eq("is_active", True).single().execute()
+            result = self.db.client.table("tier_subscriptions").select("*").eq("admin_id", admin_id).eq("is_active", True).single().execute()
             
             if result.data:
                 return TierLevel(result.data["tier"])
@@ -354,7 +354,7 @@ class TierManagementService:
     async def _count_admin_groups(self, admin_id: int) -> int:
         """Count number of groups created by admin."""
         try:
-            result = await self.db.client.table("mypoolrs").select("id", count="exact").eq("admin_id", admin_id).eq("status", "active").execute()
+            result = self.db.client.table("mypoolr").select("id", count="exact").eq("admin_id", admin_id).eq("status", "active").execute()
             return result.count or 0
         except Exception:
             return 0
@@ -362,7 +362,7 @@ class TierManagementService:
     async def _count_group_members(self, group_id: UUID) -> int:
         """Count number of members in a group."""
         try:
-            result = await self.db.client.table("members").select("id", count="exact").eq("mypoolr_id", str(group_id)).eq("status", "active").execute()
+            result = self.db.client.table("member").select("id", count="exact").eq("mypoolr_id", str(group_id)).eq("status", "active").execute()
             return result.count or 0
         except Exception:
             return 0

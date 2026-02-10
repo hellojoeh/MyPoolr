@@ -679,29 +679,46 @@ async def handle_creation_confirmation(update: Update, context: ContextTypes.DEF
             # Call backend API to create MyPoolr
             creation_data = {
                 "name": user_data.get('name'),
-                "country": user_data.get('country'),
+                "country": user_data.get('country', 'KE'),  # Default to Kenya
                 "contribution_amount": user_data.get('amount'),
                 "rotation_frequency": user_data.get('frequency'),
                 "member_limit": user_data.get('member_limit'),
                 "tier": user_data.get('tier', 'starter'),
-                "admin_telegram_id": user_id,
+                "admin_id": user_id,
                 "admin_name": update.effective_user.full_name,
                 "admin_username": update.effective_user.username
             }
             
-            result = await backend_client.create_mypoolr(creation_data)
+            result = await backend_client.create_mypoolr_with_validation(creation_data)
             
             if not result.get('success'):
-                error_msg = result.get('error', 'Unknown error occurred')
-                await query.edit_message_text(
-                    f"❌ *Creation Failed*\n\n{error_msg}\n\nPlease try again or contact support.",
-                    parse_mode="Markdown"
-                )
+                error_msg = result.get('message', result.get('error', 'Unknown error occurred'))
+                
+                # Handle specific error cases
+                if result.get('upgrade_required'):
+                    current_tier = result.get('current_tier', 'starter')
+                    await query.edit_message_text(
+                        f"❌ *Tier Limit Reached*\n\n"
+                        f"{error_msg}\n\n"
+                        f"Your current tier: {current_tier.title()}\n\n"
+                        f"💎 Upgrade your tier to create more groups!\n\n"
+                        f"Use /upgrade to see available tiers.",
+                        parse_mode="Markdown"
+                    )
+                else:
+                    await query.edit_message_text(
+                        f"❌ *Creation Failed*\n\n{error_msg}\n\nPlease try again or contact support.",
+                        parse_mode="Markdown"
+                    )
                 return ConversationHandler.END
             
-            # Get invitation code from backend response
-            invitation_code = result.get('invitation_code')
-            mypoolr_id = result.get('mypoolr_id')
+            # Get mypoolr data from backend response
+            mypoolr_data = result.get('mypoolr', {})
+            mypoolr_id = mypoolr_data.get('id')
+            
+            # Create invitation link (we'll need to create an invitation through the API)
+            # For now, create a simple invitation code based on the mypoolr ID
+            invitation_code = f"join_{mypoolr_id}" if mypoolr_id else "temp_code"
             
             # Get bot username for deep link
             bot = context.bot

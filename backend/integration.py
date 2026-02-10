@@ -133,6 +133,18 @@ class IntegrationManager:
         try:
             admin_id = mypoolr_data["admin_id"]
             
+            # Validate required fields
+            required_fields = ["name", "admin_id", "contribution_amount", "rotation_frequency", "member_limit"]
+            missing_fields = [field for field in required_fields if field not in mypoolr_data or mypoolr_data[field] is None]
+            
+            if missing_fields:
+                logger.error(f"Missing required fields: {missing_fields}")
+                return {
+                    "success": False,
+                    "error": "validation_error",
+                    "message": f"Missing required fields: {', '.join(missing_fields)}"
+                }
+            
             # Validate tier limits
             can_create = await self.tier_service.validate_tier_limits(
                 admin_id=admin_id,
@@ -152,15 +164,31 @@ class IntegrationManager:
                 }
             
             # Create MyPoolr in database
-            result = await self.db_manager.client.table("mypoolr").insert(mypoolr_data).execute()
-            mypoolr = result.data[0]
-            
-            logger.info(f"MyPoolr created: {mypoolr['id']} by admin {admin_id}")
-            
-            return {
-                "success": True,
-                "mypoolr": mypoolr
-            }
+            try:
+                result = self.db_manager.service_client.table("mypoolr").insert(mypoolr_data).execute()
+                if not result.data:
+                    logger.error(f"Database insertion failed: No data returned")
+                    return {
+                        "success": False,
+                        "error": "database_error",
+                        "message": "Failed to create group in database"
+                    }
+                
+                mypoolr = result.data[0]
+                logger.info(f"MyPoolr created: {mypoolr['id']} by admin {admin_id}")
+                
+                return {
+                    "success": True,
+                    "mypoolr": mypoolr
+                }
+                
+            except Exception as db_error:
+                logger.error(f"Database insertion error: {db_error}")
+                return {
+                    "success": False,
+                    "error": "database_error",
+                    "message": f"Database error: {str(db_error)}"
+                }
             
         except Exception as e:
             logger.error(f"MyPoolr creation failed: {e}")

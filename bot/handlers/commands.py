@@ -168,26 +168,37 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     """Handle /status command to show user's current status."""
     user_id = update.effective_user.id
     button_manager: ButtonManager = context.bot_data.get("button_manager")
+    backend_client: BackendClient = context.bot_data.get("backend_client")
     
-    # This would normally fetch from backend API
-    # For now, showing placeholder status
-    status_text = f"""
+    # Fetch user status from backend API
+    try:
+        user_groups = await backend_client.get_user_mypoolrs(user_id)
+        pending_contributions = await backend_client.get_pending_contributions(user_id)
+        tier_info = await backend_client.get_admin_tier_info(user_id)
+        
+        active_groups = len(user_groups.get('mypoolrs', [])) if user_groups.get('success') else 0
+        pending_count = len(pending_contributions.get('contributions', [])) if pending_contributions.get('success') else 0
+        current_tier = tier_info.get('tier', 'starter') if tier_info.get('success') else 'starter'
+        
+        status_text = f"""
 📊 *Your MyPoolr Status*
 
-👥 *Active Groups:* 2
-💰 *Pending Contributions:* 1
-🎯 *Next Rotation:* Tomorrow
-💎 *Current Tier:* Starter (Free)
+👥 *Active Groups:* {active_groups}
+� *Pending Contributions:* {pending_count}
+💎 *Current Tier:* {current_tier.title()}
 
-⏳ *Recent Activity:*
-• Confirmed payment to John - KES 5,000
-• Joined "Office Savings" group
-• Security deposit paid for "Family Circle"
+Use the menu below to manage your groups and contributions.
+        """.strip()
+        
+    except Exception as e:
+        logger.error(f"Error fetching user status: {e}")
+        status_text = f"""
+📊 *Your MyPoolr Status*
 
-🔔 *Notifications:*
-• Payment due in 2 hours for "Office Savings"
-• Your turn in "Family Circle" starts Monday
-    """.strip()
+Unable to fetch current status. Please try again later or contact support.
+
+Use the menu below to access available features.
+        """.strip()
     
     # Create status action buttons
     grid = button_manager.create_grid()

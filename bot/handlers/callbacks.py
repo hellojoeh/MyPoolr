@@ -161,7 +161,8 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         else:
             # Default response for unhandled callbacks
             await query.edit_message_text(
-                "🔧 This feature is coming soon!\n\n"
+                "🔧 Feature not available!\n\n"
+                "Please use the main menu to access available features.\n\n"
                 f"Callback: `{callback_data}`",
                 parse_mode="Markdown"
             )
@@ -641,7 +642,7 @@ Both parties must confirm to complete the transaction.
     
     content = help_content.get(section, {
         "title": "❓ Help Topic",
-        "content": "This help section is coming soon!"
+        "content": "This help section is not available. Please contact support for assistance."
     })
     
     grid = button_manager.create_grid()
@@ -924,17 +925,45 @@ async def handle_manage_group(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Handle group management."""
     button_manager: ButtonManager = context.bot_data.get("button_manager")
     backend_client: BackendClient = context.bot_data.get("backend_client")
-    invitation_code = callback_data.split(":", 1)[1]
+    mypoolr_id = callback_data.split(":", 1)[1]
     
-    # TODO: Fetch actual group details from backend
-    # For now, show a placeholder
-    
-    manage_text = f"""
-👥 **Manage Your Group**
+    # Fetch actual group details from backend
+    try:
+        group_result = await backend_client.get_mypoolr(mypoolr_id)
+        if group_result.get('success'):
+            group_data = group_result.get('mypoolr', {})
+            group_name = group_data.get('name', 'Unknown Group')
+            member_count = group_data.get('current_members', 0)
+            member_limit = group_data.get('member_limit', 0)
+            contribution_amount = group_data.get('contribution_amount', 0)
+            
+            manage_text = f"""
+👥 **Manage "{group_name}"**
 
-Invitation Code: `{invitation_code}`
+📊 *Group Status:*
+• Members: {member_count}/{member_limit}
+• Contribution: KES {contribution_amount:,}
+• Status: {group_data.get('status', 'Active').title()}
 
-*Group Management Options:*
+*Management Options:*
+            """.strip()
+        else:
+            manage_text = f"""
+👥 **Manage Group**
+
+Unable to load group details. Please try again later.
+
+*Available Options:*
+            """.strip()
+    except Exception as e:
+        logger.error(f"Error fetching group details: {e}")
+        manage_text = f"""
+👥 **Manage Group**
+
+Unable to load group details. Please try again later.
+
+*Available Options:*
+        """.strip()
 
 📊 View member list and status
 💰 Track contributions and payments

@@ -1,7 +1,7 @@
 """Integration API endpoints for wired component interactions."""
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
@@ -21,7 +21,10 @@ class MyPoolrCreationRequest(BaseModel):
     contribution_amount: float = Field(..., gt=0, description="Contribution amount")
     rotation_frequency: str = Field(..., description="Rotation frequency")
     member_limit: int = Field(..., gt=0, le=100, description="Maximum members")
-    country: str = Field(default="KE", description="Country code")
+    tier: str = Field(default="starter", description="Tier level")
+    admin_name: Optional[str] = Field(None, description="Admin display name")
+    admin_username: Optional[str] = Field(None, description="Admin username")
+    country: Optional[str] = Field(default="KE", description="Country code")
 
 
 class MemberJoinRequest(BaseModel):
