@@ -94,6 +94,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await handle_share_link(update, context, callback_data)
     elif callback_data.startswith("manage_group:"):
         await handle_manage_group(update, context, callback_data)
+    # Group selection callbacks
+    elif callback_data.startswith("group:"):
+        await handle_group_detail(update, context, callback_data)
     # Member management callbacks
     elif callback_data == "manage_members":
         await handle_manage_members(update, context)
@@ -876,6 +879,86 @@ What would you like to do?
     
     await update.callback_query.edit_message_text(
         text=manage_text,
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+
+
+async def handle_group_detail(update: Update, context: ContextTypes.DEFAULT_TYPE, callback_data: str) -> None:
+    """Handle viewing group details."""
+    button_manager: ButtonManager = context.bot_data.get("button_manager")
+    backend_client: BackendClient = context.bot_data.get("backend_client")
+    group_id = callback_data.split(":", 1)[1]
+    user_id = update.effective_user.id
+    
+    # TODO: Fetch actual group details from backend
+    # For now, show placeholder data
+    
+    group_details = {
+        "office_savings": {
+            "name": "Office Savings",
+            "code": "MYPOOLR-12345-67890",
+            "amount": 5000,
+            "frequency": "Weekly",
+            "members": 7,
+            "max_members": 10,
+            "status": "Active",
+            "next_rotation": "John Doe",
+            "next_date": "2026-02-15"
+        },
+        "family_circle": {
+            "name": "Family Circle",
+            "code": "MYPOOLR-42680-20176",
+            "amount": 10000,
+            "frequency": "Monthly",
+            "members": 5,
+            "max_members": 8,
+            "status": "Active",
+            "next_rotation": "Mary Smith",
+            "next_date": "2026-03-01"
+        }
+    }
+    
+    group = group_details.get(group_id, group_details["office_savings"])
+    
+    detail_text = f"""
+🎯 **{group['name']}**
+
+*Group Information:*
+• Code: `{group['code']}`
+• Status: {group['status']}
+• Members: {group['members']}/{group['max_members']}
+• Contribution: KES {group['amount']:,}
+• Frequency: {group['frequency']}
+
+*Next Rotation:*
+• Recipient: {group['next_rotation']}
+• Date: {group['next_date']}
+
+*Quick Actions:*
+    """.strip()
+    
+    grid = button_manager.create_grid()
+    grid.add_row([
+        button_manager.create_button("💰 Make Payment", "pending_payments", emoji="💰"),
+        button_manager.create_button("📅 View Schedule", "my_schedule", emoji="📅")
+    ])
+    grid.add_row([
+        button_manager.create_button("👥 View Members", "view_member_list", emoji="👥"),
+        button_manager.create_button("📤 Share Link", f"share_link:{group['code']}", emoji="📤")
+    ])
+    grid.add_row([
+        button_manager.create_button("⚙️ Manage Group", f"manage_group:{group['code']}", emoji="⚙️")
+    ])
+    grid.add_row([
+        button_manager.create_button("📋 My Groups", "my_groups", emoji="📋"),
+        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+    ])
+    
+    keyboard = button_manager.build_keyboard(grid)
+    
+    await update.callback_query.edit_message_text(
+        text=detail_text,
         reply_markup=keyboard,
         parse_mode="Markdown"
     )
