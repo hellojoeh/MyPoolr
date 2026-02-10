@@ -964,16 +964,6 @@ Unable to load group details. Please try again later.
 
 *Available Options:*
         """.strip()
-
-📊 View member list and status
-💰 Track contributions and payments
-📅 View rotation schedule
-🔒 Manage security deposits
-📤 Share invitation link
-⚙️ Update group settings
-
-What would you like to do?
-    """.strip()
     
     grid = button_manager.create_grid()
     grid.add_row([
@@ -982,7 +972,7 @@ What would you like to do?
     ])
     grid.add_row([
         button_manager.create_button("📅 Schedule", "my_schedule", emoji="📅"),
-        button_manager.create_button("📤 Share Link", f"share_link:{invitation_code}", emoji="📤")
+        button_manager.create_button("📤 Share Link", f"share_link:{mypoolr_id}", emoji="📤")
     ])
     grid.add_row([
         button_manager.create_button("📋 My Groups", "my_groups", emoji="📋"),
