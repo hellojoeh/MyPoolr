@@ -227,6 +227,10 @@ class SystemRecoveryManager:
             # Get pending transactions (not both_confirmed)
             pending_result = self.db.service_client.table("transaction").select("id", count="exact").neq("confirmation_status", "both_confirmed").execute()
             
+            # Calculate active rotations (mypoolrs with status 'active')
+            active_rotations_result = self.db.service_client.table("mypoolr").select("id", count="exact").eq("status", "active").execute()
+            active_rotations = active_rotations_result.count or 0
+            
             # Calculate checksum (simplified)
             checksum_data = {
                 "mypoolr_count": mypoolr_result.count or 0,
@@ -242,7 +246,7 @@ class SystemRecoveryManager:
                 member_count=member_result.count or 0,
                 transaction_count=transaction_result.count or 0,
                 pending_transactions=pending_result.count or 0,
-                active_rotations=0,  # TODO: Calculate active rotations
+                active_rotations=active_rotations,
                 checksum=checksum,
                 metadata={}
             )

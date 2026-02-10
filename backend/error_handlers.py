@@ -253,6 +253,38 @@ class ErrorHandler:
         
         request_id = getattr(request.state, 'request_id', None)
         
+        # Check for PostgREST schema cache errors
+        error_str = str(exc)
+        if self._is_schema_cache_error(error_str):
+            logger.error(
+                f"PostgREST schema cache mismatch detected for request {request_id}",
+                extra={
+                    "error_type": "SCHEMA_CACHE_MISMATCH",
+                    "error_code": "PGRST204",
+                    "request_id": request_id,
+                    "path": request.url.path,
+                    "method": request.method,
+                    "error_message": error_str,
+                    "action_required": "Reload PostgREST schema cache",
+                    "fix_command": "NOTIFY pgrst, 'reload schema';",
+                    "documentation": "See TROUBLESHOOTING_SCHEMA_CACHE.md"
+                }
+            )
+            
+            # Send alert for schema cache issues
+            await self._send_schema_cache_alert(error_str, request_id)
+            
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": True,
+                    "error_code": "DATABASE_SCHEMA_CACHE_ERROR",
+                    "message": "Database schema cache is out of sync. Please contact support.",
+                    "request_id": request_id,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+            )
+        
         # Log the unexpected error
         logger.error(
             f"Unexpected error for request {request_id}: {str(exc)}",
@@ -333,18 +365,90 @@ class ErrorHandler:
     
     async def _recover_database_error(self, exc: MyPoolrException) -> Dict[str, Any]:
         """Attempt recovery from database errors."""
-        # Implement database connection retry, transaction rollback, etc.
-        return {"recovered": False, "reason": "Database recovery not implemented"}
+        try:
+            # Attempt database connection retry with exponential backoff
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    # Test database connection
+                    from database import Database
+                    db = Database()
+                    # Simple query to test connection
+                    result = db.service_client.table("mypoolr").select("id", count="exact").limit(1).execute()
+                    
+                    logger.info(f"Database connection recovered on attempt {attempt + 1}")
+                    return {
+                        "recovered": True,
+                        "method": "connection_retry",
+                        "attempts": attempt + 1
+                    }
+                except Exception as retry_error:
+                    if attempt < max_retries - 1:
+                        import asyncio
+                        await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                    else:
+                        logger.error(f"Database recovery failed after {max_retries} attempts")
+            
+            return {"recovered": False, "reason": "Max retries exceeded"}
+        except Exception as e:
+            logger.error(f"Database recovery error: {e}")
+            return {"recovered": False, "reason": str(e)}
     
     async def _recover_external_service_error(self, exc: MyPoolrException) -> Dict[str, Any]:
         """Attempt recovery from external service errors."""
-        # Implement service retry, fallback mechanisms, etc.
-        return {"recovered": False, "reason": "External service recovery not implemented"}
+        try:
+            # Implement service retry with circuit breaker pattern
+            service_name = exc.context.get("service") if exc.context else "unknown"
+            
+            # Check if service is in circuit breaker
+            # For now, just attempt a simple retry
+            max_retries = 2
+            for attempt in range(max_retries):
+                try:
+                    # Service-specific recovery logic would go here
+                    # For now, just wait and return
+                    import asyncio
+                    await asyncio.sleep(1 * (attempt + 1))
+                    
+                    logger.info(f"External service recovery attempted for {service_name}")
+                    return {
+                        "recovered": False,
+                        "reason": "Service-specific recovery not implemented",
+                        "service": service_name,
+                        "suggestion": "Retry the operation or use fallback mechanism"
+                    }
+                except Exception as retry_error:
+                    if attempt < max_retries - 1:
+                        continue
+            
+            return {
+                "recovered": False,
+                "reason": "Service unavailable",
+                "service": service_name
+            }
+        except Exception as e:
+            logger.error(f"External service recovery error: {e}")
+            return {"recovered": False, "reason": str(e)}
     
     async def _recover_concurrency_error(self, exc: MyPoolrException) -> Dict[str, Any]:
         """Attempt recovery from concurrency errors."""
-        # Implement retry with backoff, lock release, etc.
-        return {"recovered": False, "reason": "Concurrency recovery not implemented"}
+        try:
+            # Implement retry with exponential backoff for lock conflicts
+            resource = exc.context.get("resource") if exc.context else "unknown"
+            
+            # Release any held locks if possible
+            # This would require access to the concurrency manager
+            
+            logger.info(f"Concurrency error recovery for resource: {resource}")
+            return {
+                "recovered": False,
+                "reason": "Retry with backoff recommended",
+                "resource": resource,
+                "suggestion": "Wait and retry the operation"
+            }
+        except Exception as e:
+            logger.error(f"Concurrency recovery error: {e}")
+            return {"recovered": False, "reason": str(e)}
     
     async def _send_alert(self, exc: MyPoolrException):
         """Send alert for critical errors."""
@@ -356,6 +460,39 @@ class ErrorHandler:
                 "error_code": exc.error_code,
                 "message": exc.message,
                 "context": exc.context.dict() if exc.context else None
+            }
+        )
+    
+    def _is_schema_cache_error(self, error_message: str) -> bool:
+        """Detect PostgREST schema cache errors."""
+        cache_error_indicators = [
+            'PGRST204',
+            'PGRST202',
+            'schema cache',
+            'could not find',
+            'column of',
+            'relation in'
+        ]
+        error_lower = error_message.lower()
+        return any(indicator.lower() in error_lower for indicator in cache_error_indicators)
+    
+    async def _send_schema_cache_alert(self, error_message: str, request_id: str):
+        """Send specific alert for schema cache issues."""
+        logger.critical(
+            "ALERT: PostgREST schema cache synchronization required!",
+            extra={
+                "alert": True,
+                "alert_type": "SCHEMA_CACHE_MISMATCH",
+                "error_message": error_message,
+                "request_id": request_id,
+                "action_required": "Reload PostgREST schema cache immediately",
+                "fix_methods": [
+                    "Supabase Dashboard: Settings → API → Reload schema cache",
+                    "SQL: NOTIFY pgrst, 'reload schema';",
+                    "Script: python reload_schema_cache.py"
+                ],
+                "documentation": "TROUBLESHOOTING_SCHEMA_CACHE.md",
+                "severity": "CRITICAL"
             }
         )
 

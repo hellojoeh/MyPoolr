@@ -121,7 +121,34 @@ WEBHOOK_SECRET_TOKEN=08cfb76d2fefb1d77e55bfa08db67a90
 3. Update bot environment with backend URL
 4. Deploy bot service
 
-### Step 6: Configure Telegram Webhook
+### Step 6: Run Database Migrations
+```bash
+# Connect to Supabase SQL Editor and run migrations in order:
+# backend/migrations/001_initial_schema.sql
+# backend/migrations/002_rls_policies.sql
+# ... (all migration files)
+```
+
+### Step 7: ⚠️ CRITICAL - Reload PostgREST Schema Cache
+**IMPORTANT**: After running migrations, you MUST reload the schema cache!
+
+**Method 1 - Supabase Dashboard** (Easiest):
+1. Go to: Settings → API
+2. Click: "Reload schema cache" button
+
+**Method 2 - SQL Editor** (Recommended):
+```sql
+NOTIFY pgrst, 'reload schema';
+```
+
+**Method 3 - Script**:
+```bash
+python reload_schema_cache.py
+```
+
+**Why This Matters**: PostgREST caches the database schema. Without reloading, API requests will fail with schema cache errors (PGRST204).
+
+### Step 8: Configure Telegram Webhook
 ```bash
 python setup_webhook.py
 ```
@@ -134,15 +161,24 @@ curl https://your-backend.onrender.com/health
 ```
 Expected: `{"status": "healthy"}`
 
-### 2. Bot Test:
+### 2. Schema Cache Verification:
+```bash
+python test_mypoolr_creation.py
+```
+Expected: MyPoolr creation succeeds without schema cache errors
+
+### 3. Bot Test:
 - Send `/start` to your Telegram bot
 - Verify bot responds correctly
+- Test `/createmypoolr` command
+- Verify MyPoolr creation works end-to-end (no schema cache errors)
 
-### 3. Database Check:
+### 4. Database Check:
 - Check Supabase dashboard
 - Verify tables are created automatically
+- Confirm schema cache is synchronized
 
-### 4. Redis Check:
+### 5. Redis Check:
 - Check Render Redis metrics
 - Verify connection is active
 

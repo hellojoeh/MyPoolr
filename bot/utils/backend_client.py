@@ -137,7 +137,23 @@ class BackendClient:
     
     async def get_user_mypoolrs(self, user_id: int) -> Dict[str, Any]:
         """Get user's MyPoolr groups."""
-        return await self._make_request("GET", f"/user/{user_id}/mypoolrs")
+        return await self._make_request("GET", f"/mypoolr/admin/{user_id}")
+    
+    async def get_member_groups(self, user_id: int) -> Dict[str, Any]:
+        """Get groups where user is a member."""
+        # This would need a backend endpoint to get member's groups
+        # For now, return the admin groups as a fallback
+        return await self.get_user_mypoolrs(user_id)
+    
+    async def get_mypoolr_details(self, mypoolr_id: str) -> Dict[str, Any]:
+        """Get detailed MyPoolr information."""
+        return await self.get_mypoolr(mypoolr_id)
+    
+    async def validate_invitation(self, invitation_code: str) -> Dict[str, Any]:
+        """Validate an invitation code."""
+        return await self._make_request("POST", "/mypoolr/invitation/validate", data={
+            "token": invitation_code
+        })
     
     # Member operations
     async def join_mypoolr(self, join_data: Dict[str, Any]) -> Dict[str, Any]:
