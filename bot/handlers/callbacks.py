@@ -97,6 +97,13 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     # Group selection callbacks
     elif callback_data.startswith("group:"):
         await handle_group_detail(update, context, callback_data)
+    # Invitation handling callbacks
+    elif callback_data == "paste_invitation":
+        await handle_paste_invitation(update, context)
+    elif callback_data.startswith("join_invitation:"):
+        await handle_join_invitation(update, context, callback_data)
+    elif callback_data.startswith("confirm_join:"):
+        await handle_confirm_join(update, context, callback_data)
     # Member management callbacks
     elif callback_data == "manage_members":
         await handle_manage_members(update, context)
@@ -200,47 +207,103 @@ Welcome back, {MessageFormatter.escape_markdown(user.first_name)}.
 async def handle_my_groups(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle my groups display."""
     button_manager: ButtonManager = context.bot_data.get("button_manager")
+    backend_client: BackendClient = context.bot_data.get("backend_client")
+    user_id = update.effective_user.id
     
-    # This would normally fetch from backend API
-    groups_text = f"""
+    await update.callback_query.answer()
+    
+    try:
+        # Fetch user's groups from backend
+        result = await backend_client.get_member_groups(user_id)
+        
+        if not result.get('success'):
+            await update.callback_query.edit_message_text(
+                "❌ Unable to fetch your groups. Please try again.",
+                parse_mode="Markdown"
+            )
+            return
+        
+        groups = result.get('groups', [])
+        
+        if not groups:
+            # No groups yet
+            groups_text = """
 👥 *My MyPoolr Groups*
 
-📊 *Active Groups (2):*
+You haven't joined any groups yet!
 
-🎯 **Office Savings**
-💰 KES 5,000 • 📅 Weekly • 👥 8/10
-📍 Your turn: Next week
+*Get Started:*
+• Create your own MyPoolr group
+• Join an existing group with an invitation link
 
-🎯 **Family Circle** 
-💰 KES 2,000 • 📅 Monthly • 👥 5/6
-📍 Your turn: Position #3
+Ready to start saving together?
+            """.strip()
+            
+            grid = button_manager.create_grid()
+            grid.add_row([
+                button_manager.create_button("➕ Create Group", "create_mypoolr", emoji="➕"),
+                button_manager.create_button("🔗 Join Group", "join_via_link", emoji="🔗")
+            ])
+            grid.add_row([
+                button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+            ])
+        else:
+            # Build groups list
+            groups_list = []
+            for group in groups:
+                groups_list.append(
+                    f"🎯 **{group['name']}**\n"
+                    f"💰 KES {group['contribution_amount']:,} • "
+                    f"📅 {group['rotation_frequency'].title()} • "
+                    f"👥 {group['current_members']}/{group['member_limit']}\n"
+                    f"📍 Your position: #{group['member_position']}"
+                )
+            
+            groups_text = f"""
+👥 *My MyPoolr Groups*
+
+📊 *Active Groups ({len(groups)}):*
+
+{chr(10).join(groups_list)}
 
 💡 *Quick Stats:*
-• Total contributed this month: KES 14,000
-• Next payment due: Tomorrow
-• Security deposits: All paid ✅
-    """.strip()
+• Total groups: {len(groups)}
+• Active contributions: {sum(1 for g in groups if g.get('is_active'))}
+            """.strip()
+            
+            # Create group buttons
+            grid = button_manager.create_grid()
+            for group in groups[:4]:  # Show max 4 groups
+                grid.add_row([
+                    button_manager.create_button(
+                        f"🎯 {group['name'][:20]}", 
+                        f"group:{group['id']}", 
+                        emoji="🎯"
+                    )
+                ])
+            
+            grid.add_row([
+                button_manager.create_button("➕ Create New", "create_mypoolr", emoji="➕"),
+                button_manager.create_button("🔗 Join Another", "join_via_link", emoji="🔗")
+            ])
+            grid.add_row([
+                button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+            ])
+        
+        keyboard = button_manager.build_keyboard(grid)
+        
+        await update.callback_query.edit_message_text(
+            text=groups_text,
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
     
-    # Create group action buttons
-    grid = button_manager.create_grid()
-    grid.add_row([
-        button_manager.create_button("🎯 Office Savings", "group:office_savings", emoji="🎯"),
-        button_manager.create_button("🎯 Family Circle", "group:family_circle", emoji="🎯")
-    ])
-    grid.add_row([
-        button_manager.create_button("➕ Create New", "create_mypoolr", emoji="➕"),
-        button_manager.create_button("🔗 Join Another", "join_via_link", emoji="🔗")
-    ])
-    grid.add_row([
-        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
-    ])
-    
-    keyboard = button_manager.build_keyboard(grid)
-    
-    await update.callback_query.edit_message_text(
-        text=groups_text,
-        reply_markup=keyboard,
-        parse_mode="Markdown"
+    except Exception as e:
+        logger.error(f"Error fetching groups: {e}")
+        await update.callback_query.edit_message_text(
+            "❌ An error occurred while fetching your groups. Please try again.",
+            parse_mode="Markdown"
+        )
     )
 
 
@@ -742,22 +805,38 @@ async def handle_my_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def handle_join_invitation(update: Update, context: ContextTypes.DEFAULT_TYPE, callback_data: str) -> None:
     """Handle joining via invitation link."""
-    invitation_id = callback_data.replace("join_invitation:", "")
+    invitation_code = callback_data.replace("join_invitation:", "")
     button_manager: ButtonManager = context.bot_data.get("button_manager")
+    backend_client: BackendClient = context.bot_data.get("backend_client")
     
-    # This would normally fetch invitation details from backend
-    join_text = f"""
+    await update.callback_query.answer()
+    
+    try:
+        # Validate invitation code with backend
+        result = await backend_client.validate_invitation(invitation_code)
+        
+        if not result.get('success'):
+            error_msg = result.get('error', 'Invalid invitation code')
+            await update.callback_query.edit_message_text(
+                f"❌ *Invalid Invitation*\n\n{error_msg}",
+                parse_mode="Markdown"
+            )
+            return
+        
+        mypoolr = result.get('mypoolr')
+        
+        join_text = f"""
 🎯 *Join MyPoolr Group*
 
 *Invitation Details:*
-Group: "Office Savings"
-Admin: John Doe
-Contribution: KES 5,000
-Frequency: Weekly
-Members: 7/10
+Group: "{mypoolr['name']}"
+Admin: {mypoolr['admin_name']}
+Contribution: KES {mypoolr['contribution_amount']:,}
+Frequency: {mypoolr['rotation_frequency'].title()}
+Members: {mypoolr['current_members']}/{mypoolr['member_limit']}
 
 *Security Deposit Required:*
-Amount: KES 15,000
+Amount: KES {mypoolr['security_deposit']:,}
 Purpose: Protects all members from losses
 Returned: When cycle completes
 
@@ -768,24 +847,31 @@ Returned: When cycle completes
 4. Start contributing when it's time!
 
 Ready to join this group?
-    """.strip()
+        """.strip()
+        
+        grid = button_manager.create_grid()
+        grid.add_row([
+            button_manager.create_button("✅ Join Group", f"confirm_join:{invitation_code}", emoji="✅")
+        ])
+        grid.add_row([
+            button_manager.create_button("📖 Learn More", "learn_security", emoji="📖"),
+            button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+        ])
+        
+        keyboard = button_manager.build_keyboard(grid)
+        
+        await update.callback_query.edit_message_text(
+            text=join_text,
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
     
-    grid = button_manager.create_grid()
-    grid.add_row([
-        button_manager.create_button("✅ Join Group", f"confirm_join:{invitation_id}", emoji="✅")
-    ])
-    grid.add_row([
-        button_manager.create_button("📖 Learn More", "learn_security", emoji="📖"),
-        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
-    ])
-    
-    keyboard = button_manager.build_keyboard(grid)
-    
-    await update.callback_query.edit_message_text(
-        text=join_text,
-        reply_markup=keyboard,
-        parse_mode="Markdown"
-    )
+    except Exception as e:
+        logger.error(f"Error validating invitation: {e}")
+        await update.callback_query.edit_message_text(
+            "❌ An error occurred while validating the invitation. Please try again.",
+            parse_mode="Markdown"
+        )
 
 
 async def handle_share_link(update: Update, context: ContextTypes.DEFAULT_TYPE, callback_data: str) -> None:
@@ -891,77 +977,170 @@ async def handle_group_detail(update: Update, context: ContextTypes.DEFAULT_TYPE
     group_id = callback_data.split(":", 1)[1]
     user_id = update.effective_user.id
     
-    # TODO: Fetch actual group details from backend
-    # For now, show placeholder data
+    await update.callback_query.answer()
     
-    group_details = {
-        "office_savings": {
-            "name": "Office Savings",
-            "code": "MYPOOLR-12345-67890",
-            "amount": 5000,
-            "frequency": "Weekly",
-            "members": 7,
-            "max_members": 10,
-            "status": "Active",
-            "next_rotation": "John Doe",
-            "next_date": "2026-02-15"
-        },
-        "family_circle": {
-            "name": "Family Circle",
-            "code": "MYPOOLR-42680-20176",
-            "amount": 10000,
-            "frequency": "Monthly",
-            "members": 5,
-            "max_members": 8,
-            "status": "Active",
-            "next_rotation": "Mary Smith",
-            "next_date": "2026-03-01"
-        }
-    }
-    
-    group = group_details.get(group_id, group_details["office_savings"])
-    
-    detail_text = f"""
+    try:
+        # Fetch group details from backend
+        result = await backend_client.get_mypoolr_details(group_id)
+        
+        if not result.get('success'):
+            await update.callback_query.edit_message_text(
+                "❌ Unable to fetch group details. Please try again.",
+                parse_mode="Markdown"
+            )
+            return
+        
+        group = result.get('mypoolr')
+        invitation_code = result.get('invitation_code')
+        
+        detail_text = f"""
 🎯 **{group['name']}**
 
 *Group Information:*
-• Code: `{group['code']}`
-• Status: {group['status']}
-• Members: {group['members']}/{group['max_members']}
-• Contribution: KES {group['amount']:,}
-• Frequency: {group['frequency']}
+• Code: `{invitation_code}`
+• Status: {group['status'].title()}
+• Members: {group['current_members']}/{group['member_limit']}
+• Contribution: KES {group['contribution_amount']:,}
+• Frequency: {group['rotation_frequency'].title()}
 
 *Next Rotation:*
-• Recipient: {group['next_rotation']}
-• Date: {group['next_date']}
+• Recipient: {group.get('next_recipient', 'TBD')}
+• Date: {group.get('next_rotation_date', 'TBD')}
 
 *Quick Actions:*
-    """.strip()
+        """.strip()
+        
+        grid = button_manager.create_grid()
+        grid.add_row([
+            button_manager.create_button("💰 Make Payment", "pending_payments", emoji="💰"),
+            button_manager.create_button("📅 View Schedule", "my_schedule", emoji="📅")
+        ])
+        grid.add_row([
+            button_manager.create_button("👥 View Members", "view_member_list", emoji="👥"),
+            button_manager.create_button("📤 Share Link", f"share_link:{invitation_code}", emoji="📤")
+        ])
+        grid.add_row([
+            button_manager.create_button("⚙️ Manage Group", f"manage_group:{group_id}", emoji="⚙️")
+        ])
+        grid.add_row([
+            button_manager.create_button("📋 My Groups", "my_groups", emoji="📋"),
+            button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+        ])
+        
+        keyboard = button_manager.build_keyboard(grid)
+        
+        await update.callback_query.edit_message_text(
+            text=detail_text,
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
     
-    grid = button_manager.create_grid()
-    grid.add_row([
-        button_manager.create_button("💰 Make Payment", "pending_payments", emoji="💰"),
-        button_manager.create_button("📅 View Schedule", "my_schedule", emoji="📅")
-    ])
-    grid.add_row([
-        button_manager.create_button("👥 View Members", "view_member_list", emoji="👥"),
-        button_manager.create_button("📤 Share Link", f"share_link:{group['code']}", emoji="📤")
-    ])
-    grid.add_row([
-        button_manager.create_button("⚙️ Manage Group", f"manage_group:{group['code']}", emoji="⚙️")
-    ])
-    grid.add_row([
-        button_manager.create_button("📋 My Groups", "my_groups", emoji="📋"),
-        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
-    ])
-    
-    keyboard = button_manager.build_keyboard(grid)
-    
+    except Exception as e:
+        logger.error(f"Error fetching group details: {e}")
+        await update.callback_query.edit_message_text(
+            "❌ An error occurred while fetching group details. Please try again.",
+            parse_mode="Markdown"
+        )
+
+
+async def handle_paste_invitation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle paste invitation callback - prompt user to send invitation code."""
+    await update.callback_query.answer()
     await update.callback_query.edit_message_text(
-        text=detail_text,
-        reply_markup=keyboard,
+        "📋 *Paste Invitation Code*\n\n"
+        "Please send me the invitation code you received.\n\n"
+        "*Format:* MYPOOLR-XXXXX-XXXXX\n\n"
+        "Or send the full invitation link.",
         parse_mode="Markdown"
     )
+    # Store state to expect invitation code
+    state_manager: StateManager = context.bot_data.get("state_manager")
+    if state_manager:
+        state_manager.start_conversation(update.effective_user.id, "awaiting_invitation_code")
+
+
+async def handle_confirm_join(update: Update, context: ContextTypes.DEFAULT_TYPE, callback_data: str) -> None:
+    """Handle confirming to join a MyPoolr group."""
+    invitation_code = callback_data.replace("confirm_join:", "")
+    button_manager: ButtonManager = context.bot_data.get("button_manager")
+    backend_client: BackendClient = context.bot_data.get("backend_client")
+    user_id = update.effective_user.id
+    
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_text(
+        "⏳ *Joining Group...*\n\nPlease wait while we process your request.",
+        parse_mode="Markdown"
+    )
+    
+    try:
+        # Call backend to join the group
+        join_data = {
+            "invitation_code": invitation_code,
+            "telegram_id": user_id,
+            "full_name": update.effective_user.full_name,
+            "username": update.effective_user.username
+        }
+        
+        result = await backend_client.join_mypoolr(join_data)
+        
+        if result.get('success'):
+            mypoolr_name = result.get('mypoolr_name', 'MyPoolr')
+            security_deposit = result.get('security_deposit', 0)
+            
+            success_text = f"""
+✅ *Successfully Joined!*
+
+Welcome to "{mypoolr_name}"!
+
+🔒 *Next Step: Security Deposit*
+Amount: KES {security_deposit:,}
+
+*Payment Instructions:*
+1. Pay via M-Pesa to the group admin
+2. Upload payment receipt
+3. Wait for admin confirmation
+4. You'll be added to the rotation schedule
+
+*What is the security deposit?*
+• Protects all members from losses
+• Returned when the cycle completes
+• Required before you can participate
+
+Ready to pay your security deposit?
+            """.strip()
+            
+            grid = button_manager.create_grid()
+            grid.add_row([
+                button_manager.create_button("💰 Pay Deposit", "pay_security_deposit", emoji="💰")
+            ])
+            grid.add_row([
+                button_manager.create_button("📖 Learn More", "learn_security", emoji="📖"),
+                button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+            ])
+            
+            keyboard = button_manager.build_keyboard(grid)
+            
+            await update.callback_query.edit_message_text(
+                text=success_text,
+                reply_markup=keyboard,
+                parse_mode="Markdown"
+            )
+        else:
+            error_msg = result.get('error', 'Unable to join group')
+            await update.callback_query.edit_message_text(
+                f"❌ *Join Failed*\n\n{error_msg}\n\nPlease contact the group admin or try again.",
+                parse_mode="Markdown"
+            )
+    
+    except Exception as e:
+        logger.error(f"Error joining MyPoolr: {e}")
+        await update.callback_query.edit_message_text(
+            "❌ *Join Failed*\n\n"
+            "An error occurred while joining the group. "
+            "Please try again or contact support.\n\n"
+            f"Error: {str(e)}",
+            parse_mode="Markdown"
+        )
 
 
 def setup_callback_handlers(application) -> None:

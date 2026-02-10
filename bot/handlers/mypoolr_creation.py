@@ -9,6 +9,7 @@ from utils.state_manager import StateManager, ConversationState
 from utils.ui_components import ProgressIndicator, InteractiveCard
 from utils.formatters import MessageFormatter, EmojiHelper
 from utils.feedback_system import VisualFeedbackManager
+from utils.backend_client import BackendClient
 
 
 # Conversation states
@@ -659,6 +660,7 @@ async def handle_creation_confirmation(update: Update, context: ContextTypes.DEF
     
     button_manager: ButtonManager = context.bot_data.get("button_manager")
     state_manager: StateManager = context.bot_data.get("state_manager")
+    backend_client: BackendClient = context.bot_data.get("backend_client")
     user_id = update.effective_user.id
     
     if query.data == "confirm_create":
@@ -673,16 +675,40 @@ async def handle_creation_confirmation(update: Update, context: ContextTypes.DEF
             "⏳ Configuring security settings"
         )
         
-        # Simulate creation process (would call backend API)
-        import asyncio
-        await asyncio.sleep(2)
-        
-        # Generate mock invitation link
-        import random
-        invitation_code = f"MYPOOLR-{random.randint(10000, 99999)}-{random.randint(10000, 99999)}"
-        invitation_link = f"https://t.me/mypoolr_bot?start=invite_{invitation_code}"
-        
-        success_text = f"""
+        try:
+            # Call backend API to create MyPoolr
+            creation_data = {
+                "name": user_data.get('name'),
+                "country": user_data.get('country'),
+                "contribution_amount": user_data.get('amount'),
+                "rotation_frequency": user_data.get('frequency'),
+                "member_limit": user_data.get('member_limit'),
+                "tier": user_data.get('tier', 'starter'),
+                "admin_telegram_id": user_id,
+                "admin_name": update.effective_user.full_name,
+                "admin_username": update.effective_user.username
+            }
+            
+            result = await backend_client.create_mypoolr(creation_data)
+            
+            if not result.get('success'):
+                error_msg = result.get('error', 'Unknown error occurred')
+                await query.edit_message_text(
+                    f"❌ *Creation Failed*\n\n{error_msg}\n\nPlease try again or contact support.",
+                    parse_mode="Markdown"
+                )
+                return ConversationHandler.END
+            
+            # Get invitation code from backend response
+            invitation_code = result.get('invitation_code')
+            mypoolr_id = result.get('mypoolr_id')
+            
+            # Get bot username for deep link
+            bot = context.bot
+            bot_username = (await bot.get_me()).username
+            invitation_link = f"https://t.me/{bot_username}?start={invitation_code}"
+            
+            success_text = f"""
 🎉 *MyPoolr Created Successfully!*
 
 Your "{MessageFormatter.escape_markdown(user_data.get('name', 'MyPoolr'))}" group is ready!
@@ -704,25 +730,35 @@ Send the link above to invite members to your group.
 • Contribution: {MessageFormatter.format_currency(user_data.get('amount', 0))}
 • Frequency: {user_data.get('frequency', 'Unknown').title()}
 • Max Members: {user_data.get('member_limit', 0)}
-        """.strip()
-        
-        # Create action buttons
-        grid = button_manager.create_grid()
-        grid.add_row([
-            button_manager.create_button("📤 Share Link", f"share_link:{invitation_code}", emoji="📤"),
-            button_manager.create_button("👥 Manage Group", f"manage_group:{invitation_code}", emoji="👥")
-        ])
-        grid.add_row([
-            button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
-        ])
-        
-        keyboard = button_manager.build_keyboard(grid)
-        
-        await query.edit_message_text(
-            text=success_text,
-            reply_markup=keyboard,
-            parse_mode="Markdown"
-        )
+            """.strip()
+            
+            # Create action buttons
+            grid = button_manager.create_grid()
+            grid.add_row([
+                button_manager.create_button("📤 Share Link", f"share_link:{invitation_code}", emoji="📤"),
+                button_manager.create_button("👥 Manage Group", f"manage_group:{mypoolr_id}", emoji="👥")
+            ])
+            grid.add_row([
+                button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+            ])
+            
+            keyboard = button_manager.build_keyboard(grid)
+            
+            await query.edit_message_text(
+                text=success_text,
+                reply_markup=keyboard,
+                parse_mode="Markdown"
+            )
+            
+        except Exception as e:
+            logger.error(f"Error creating MyPoolr: {e}")
+            await query.edit_message_text(
+                "❌ *Creation Failed*\n\n"
+                "An error occurred while creating your MyPoolr. "
+                "Please try again or contact support.\n\n"
+                f"Error: {str(e)}",
+                parse_mode="Markdown"
+            )
         
         # Clear conversation state
         if state_manager:
