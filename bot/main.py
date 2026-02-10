@@ -75,7 +75,8 @@ async def main():
             logger.info("Starting polling mode...")
             await application.run_polling(
                 allowed_updates=["message", "callback_query"],
-                drop_pending_updates=True
+                drop_pending_updates=True,
+                close_loop=False
             )
     except Exception as e:
         logger.error(f"Error running bot: {e}")
@@ -90,4 +91,10 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
+    except RuntimeError as e:
+        if "event loop" not in str(e).lower():
+            raise
