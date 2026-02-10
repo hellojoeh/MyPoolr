@@ -304,7 +304,6 @@ Ready to start saving together?
             "❌ An error occurred while fetching your groups. Please try again.",
             parse_mode="Markdown"
         )
-    )
 
 
 async def handle_create_mypoolr(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
