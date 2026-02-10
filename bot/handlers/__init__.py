@@ -10,5 +10,6 @@ from .conversations import setup_conversation_handlers
 def setup_handlers(application: Application) -> None:
     """Set up all bot handlers."""
     setup_command_handlers(application)
-    setup_callback_handlers(application)
+    # Conversation handlers MUST be registered before catch-all callback handlers
     setup_conversation_handlers(application)
+    setup_callback_handlers(application)
