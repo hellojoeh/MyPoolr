@@ -24,7 +24,7 @@ structlog==23.2.0
 python-dateutil==2.8.2
 
 # Security
-cryptography==41.0.8
+cryptography==41.0.7
 
 # Validation
 phonenumbers==8.13.26
