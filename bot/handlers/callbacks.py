@@ -64,6 +64,23 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     
     logger.info(f"Button callback: {callback_data} from user {user_id}")
     
+    # Handle conversation-related callbacks that fell through
+    # (when user is not in active conversation state)
+    conversation_callbacks = {
+        'cancel_creation', 'confirm_create', 'edit_details',
+        'start_mypoolr_creation'
+    }
+    conversation_prefixes = ('back_to_', 'country:', 'frequency:', 'tier:', 'members:')
+    
+    if callback_data in conversation_callbacks or callback_data.startswith(conversation_prefixes):
+        logger.warning(f"Conversation callback fell through: {callback_data}")
+        # Clear any stale state
+        if state_manager:
+            state_manager.end_conversation(user_id)
+        # Return to main menu
+        await handle_main_menu(update, context)
+        return
+    
     # Handle navigation callbacks
     if callback_data == "main_menu":
         await handle_main_menu(update, context)
