@@ -73,25 +73,58 @@ async def main():
             )
         else:
             logger.info("Starting polling mode...")
-            await application.run_polling(
+            # Initialize the application
+            await application.initialize()
+            await application.start()
+            
+            # Start polling
+            await application.updater.start_polling(
                 allowed_updates=["message", "callback_query"],
-                drop_pending_updates=True,
-                close_loop=False
+                drop_pending_updates=True
             )
+            
+            logger.info("Bot is running. Press Ctrl+C to stop.")
+            
+            # Keep the bot running
+            import signal
+            stop_event = asyncio.Event()
+            
+            def signal_handler(sig, frame):
+                logger.info("Received stop signal")
+                stop_event.set()
+            
+            signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
+            
+            await stop_event.wait()
+            
     except Exception as e:
         logger.error(f"Error running bot: {e}")
         raise
     finally:
         # Cleanup
         try:
-            await backend_client.close()
+            if application.updater and application.updater.running:
+                await application.updater.stop()
+            await application.stop()
             await application.shutdown()
-        except:
-            pass
+            await backend_client.close()
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
 
 
 if __name__ == "__main__":
+    # Don't use asyncio.run() - it creates a new loop
+    # Instead, create and manage the loop manually
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
     try:
-        asyncio.run(main())
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")
+    finally:
+        try:
+            loop.close()
+        except:
+            pass
