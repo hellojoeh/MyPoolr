@@ -90,8 +90,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await handle_create_mypoolr(update, context)
     elif callback_data == "join_via_link":
         await handle_join_via_link(update, context)
-    elif callback_data == "upgrade_tier":
-        await handle_upgrade_tier(update, context)
     elif callback_data == "help_main":
         await handle_help_main(update, context)
     elif callback_data == "settings":
@@ -153,218 +151,8 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     elif callback_data == "contact_support":
         await handle_contact_support(update, context)
     # Additional settings callbacks
-    elif callback_data == "settings_notifications":
-        await handle_settings_section(update, context, "settings_notifications")
-    elif callback_data == "settings_currency":
-        await handle_settings_section(update, context, "settings_currency")
-    # Conversation/creation callbacks
-    elif callback_data == "start_mypoolr_creation":
-        await handle_start_creation(update, context)
-    elif callback_data == "confirm_create":
-        await handle_confirm_create(update, context)
-    elif callback_data == "cancel_creation":
-        await handle_cancel_creation(update, context)
-    elif callback_data == "edit_details":
-        await handle_edit_details(update, context)
-    # Export format callbacks
-    elif callback_data.startswith("export_") and callback_data.endswith(("_pdf", "_csv", "_excel")):
-        await handle_export_format(update, context, callback_data)
-    # Payment and billing callbacks
-    elif callback_data == "billing_history":
-        await handle_billing_history(update, context)
-    elif callback_data == "billing_alerts":
-        await handle_billing_alerts(update, context)
-    elif callback_data == "billing_support":
-        await handle_billing_support(update, context)
-    elif callback_data == "cancel_payment":
-        await handle_cancel_payment(update, context)
-    elif callback_data == "cancel_subscription":
-        await handle_cancel_subscription(update, context)
-    elif callback_data == "auto_renewal_settings":
-        await handle_auto_renewal_settings(update, context)
-    elif callback_data == "update_payment_method":
-        await handle_update_payment_method(update, context)
-    # Member and invitation management
-    elif callback_data == "invitation_settings":
-        await handle_invitation_settings(update, context)
-    elif callback_data == "invitation_stats":
-        await handle_invitation_stats(update, context)
-    elif callback_data == "invitation_analytics":
-        await handle_invitation_analytics(update, context)
-    elif callback_data == "generate_new_invitation":
-        await handle_generate_new_invitation(update, context)
-    elif callback_data == "resend_invitations":
-        await handle_resend_invitations(update, context)
-    elif callback_data == "deactivate_invitations":
-        await handle_deactivate_invitations(update, context)
-    elif callback_data == "track_invitation_responses":
-        await handle_track_invitation_responses(update, context)
-    elif callback_data == "custom_invitation_message":
-        await handle_custom_invitation_message(update, context)
-    elif callback_data == "new_invitation_link":
-        await handle_new_invitation_link(update, context)
-    elif callback_data.startswith("remind_member:"):
-        await handle_remind_member(update, context, callback_data)
-    elif callback_data == "invite_more_members":
-        await handle_invite_more_members(update, context)
-    elif callback_data == "export_members":
-        await handle_export_members(update, context)
-    elif callback_data == "message_all_members":
-        await handle_message_all_members(update, context)
-    elif callback_data == "send_group_message":
-        await handle_send_group_message(update, context)
-    elif callback_data == "member_settings":
-        await handle_member_settings(update, context)
-    # Analytics and reporting
-    elif callback_data == "view_analytics":
-        await handle_view_analytics(update, context)
-    elif callback_data == "detailed_analytics":
-        await handle_detailed_analytics(update, context)
-    elif callback_data == "payment_analytics":
-        await handle_payment_analytics(update, context)
-    elif callback_data == "detailed_payment_analytics":
-        await handle_detailed_payment_analytics(update, context)
-    elif callback_data == "payment_trends":
-        await handle_payment_trends(update, context)
-    elif callback_data == "explore_analytics":
-        await handle_explore_analytics(update, context)
-    elif callback_data == "detailed_tracking_report":
-        await handle_detailed_tracking_report(update, context)
-    elif callback_data == "export_stats_report":
-        await handle_export_stats_report(update, context)
-    elif callback_data == "security_report":
-        await handle_security_report(update, context)
-    elif callback_data == "filter_by_date":
-        await handle_filter_by_date(update, context)
-    elif callback_data == "filter_by_group":
-        await handle_filter_by_group(update, context)
-    # Payment and contribution callbacks
-    elif callback_data == "pay_office_savings":
-        await handle_pay_office_savings(update, context)
-    elif callback_data == "prepare_next_payment":
-        await handle_prepare_next_payment(update, context)
-    elif callback_data == "next_payment_schedule":
-        await handle_next_payment_schedule(update, context)
-    elif callback_data == "view_all_contributions":
-        await handle_view_all_contributions(update, context)
-    elif callback_data == "contribution_help":
-        await handle_contribution_help(update, context)
-    elif callback_data == "payment_help":
-        await handle_payment_help(update, context)
-    elif callback_data == "recipient_help":
-        await handle_recipient_help(update, context)
-    elif callback_data == "send_payment_reminders":
-        await handle_send_payment_reminders(update, context)
-    elif callback_data == "set_payment_reminders":
-        await handle_set_payment_reminders(update, context)
-    elif callback_data == "handle_overdue_payments":
-        await handle_overdue_payments(update, context)
-    elif callback_data == "remove_overdue_members":
-        await handle_remove_overdue_members(update, context)
-    elif callback_data == "report_payment_problem":
-        await handle_report_payment_problem(update, context)
-    elif callback_data.startswith("remind_recipient:"):
-        await handle_remind_recipient(update, context, callback_data)
-    elif callback_data.startswith("message_recipient:"):
-        await handle_message_recipient(update, context, callback_data)
-    elif callback_data == "get_recipient_details":
-        await handle_get_recipient_details(update, context)
-    elif callback_data == "contact_sender":
-        await handle_contact_sender(update, context)
-    elif callback_data == "contact_admin":
-        await handle_contact_admin(update, context)
-    elif callback_data == "contact_group_admin":
-        await handle_contact_group_admin(update, context)
-    # Receipt and transaction callbacks
-    elif callback_data == "download_receipt":
-        await handle_download_receipt(update, context)
-    elif callback_data == "download_all_receipts":
-        await handle_download_all_receipts(update, context)
-    elif callback_data == "receipt_upload_guide":
-        await handle_receipt_upload_guide(update, context)
-    elif callback_data == "receipt_examples":
-        await handle_receipt_examples(update, context)
-    elif callback_data == "take_receipt_photo":
-        await handle_take_receipt_photo(update, context)
-    elif callback_data == "upload_from_gallery":
-        await handle_upload_from_gallery(update, context)
-    elif callback_data == "skip_receipt_upload":
-        await handle_skip_receipt_upload(update, context)
-    elif callback_data == "check_mpesa_messages":
-        await handle_check_mpesa_messages(update, context)
-    elif callback_data == "forward_mpesa_sms":
-        await handle_forward_mpesa_sms(update, context)
-    elif callback_data == "send_transaction_code":
-        await handle_send_transaction_code(update, context)
-    elif callback_data == "view_transaction":
-        await handle_view_transaction(update, context)
-    elif callback_data == "view_transaction_details":
-        await handle_view_transaction_details(update, context)
-    elif callback_data == "export_payment_history":
-        await handle_export_payment_history(update, context)
-    # Tier and upgrade callbacks
-    elif callback_data == "downgrade_tier":
-        await handle_downgrade_tier(update, context)
-    elif callback_data == "upgrade_from_current":
-        await handle_upgrade_from_current(update, context)
-    elif callback_data == "upgrade_help":
-        await handle_upgrade_help(update, context)
-    elif callback_data == "get_tier_recommendation":
-        await handle_get_tier_recommendation(update, context)
-    elif callback_data == "essential_feature_guide":
-        await handle_essential_feature_guide(update, context)
-    elif callback_data == "essential_support":
-        await handle_essential_support(update, context)
-    elif callback_data == "premium_support":
-        await handle_premium_support(update, context)
-    elif callback_data == "rate_upgrade":
-        await handle_rate_upgrade(update, context)
-    elif callback_data == "share_upgrade":
-        await handle_share_upgrade(update, context)
-    # Sales and support callbacks
-    elif callback_data == "schedule_demo":
-        await handle_schedule_demo(update, context)
-    elif callback_data == "email_sales":
-        await handle_email_sales(update, context)
-    elif callback_data == "talk_to_sales":
-        await handle_talk_to_sales(update, context)
-    # Group optimization and management
-    elif callback_data == "optimize_group":
-        await handle_optimize_group(update, context)
-    elif callback_data == "optimize_schedule":
-        await handle_optimize_schedule(update, context)
-    elif callback_data == "recalculate_deposits":
-        await handle_recalculate_deposits(update, context)
-    elif callback_data == "use_security_deposits":
-        await handle_use_security_deposits(update, context)
-    elif callback_data == "compare_groups":
-        await handle_compare_groups(update, context)
-    elif callback_data == "create_second_group":
-        await handle_create_second_group(update, context)
-    # Notification and settings callbacks
-    elif callback_data == "notification_settings":
-        await handle_notification_settings(update, context)
-    elif callback_data == "setup_notifications":
-        await handle_setup_notifications(update, context)
-    elif callback_data == "setup_priority_notifications":
-        await handle_setup_priority_notifications(update, context)
-    # Miscellaneous callbacks
-    elif callback_data == "refresh_tracking":
-        await handle_refresh_tracking(update, context)
-    elif callback_data == "add_to_calendar":
-        await handle_add_to_calendar(update, context)
-    elif callback_data == "share_via_sms":
-        await handle_share_via_sms(update, context)
-    elif callback_data == "share_success":
-        await handle_share_success(update, context)
-    elif callback_data == "rate_experience":
-        await handle_rate_experience(update, context)
-    elif callback_data == "skip_onboarding":
-        await handle_skip_onboarding(update, context)
-    elif callback_data == "address_issues":
-        await handle_address_issues(update, context)
-    elif callback_data.startswith("upload_deposit_receipt:"):
-        await handle_upload_deposit_receipt(update, context, callback_data)
+    elif callback_data.startswith("settings_"):
+        await handle_settings_section(update, context, callback_data)
     # Back navigation callbacks
     elif callback_data.startswith("back_to_"):
         await handle_back_navigation(update, context, callback_data)
@@ -769,14 +557,17 @@ async def handle_upgrade_tier(update: Update, context: ContextTypes.DEFAULT_TYPE
 💳 *Payment via M-Pesa STK Push*
     """.strip()
     
-    # Create tier selection buttons
-    tiers = [
-        {"id": "essential", "name": "Essential", "price": 2, "stars": 1},
-        {"id": "advanced", "name": "Advanced", "price": 5, "stars": 2},
-        {"id": "extended", "name": "Extended", "price": 10, "stars": 3}
-    ]
-    
-    grid = button_manager.create_tier_selection_buttons(tiers)
+    # Create tier selection buttons using select_tier: prefix
+    grid = button_manager.create_grid()
+    grid.add_row([
+        button_manager.create_button("⭐ Essential - $2/mo", "select_tier:essential", emoji="⭐")
+    ])
+    grid.add_row([
+        button_manager.create_button("⭐⭐ Advanced - $5/mo", "select_tier:advanced", emoji="⭐⭐")
+    ])
+    grid.add_row([
+        button_manager.create_button("⭐⭐⭐ Extended - $10/mo", "select_tier:extended", emoji="⭐⭐⭐")
+    ])
     
     # Add navigation
     grid.add_row([

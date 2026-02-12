@@ -137,7 +137,33 @@ class BackendClient:
     
     async def get_user_mypoolrs(self, user_id: int) -> Dict[str, Any]:
         """Get user's MyPoolr groups."""
-        return await self._make_request("GET", f"/mypoolr/admin/{user_id}")
+        try:
+            result = await self._make_request("GET", f"/mypoolr/admin/{user_id}")
+            
+            # Handle error responses
+            if isinstance(result, dict) and not result.get("success", True):
+                return result
+            
+            # Backend returns a list directly on success
+            if isinstance(result, list):
+                return {
+                    "success": True,
+                    "groups": result
+                }
+            
+            # Unexpected format
+            return {
+                "success": False,
+                "error": "invalid_response",
+                "message": "Unexpected response format from backend"
+            }
+        except Exception as e:
+            logger.error(f"Error getting user mypoolrs: {e}")
+            return {
+                "success": False,
+                "error": "exception",
+                "message": str(e)
+            }
     
     async def get_member_groups(self, user_id: int) -> Dict[str, Any]:
         """Get groups where user is a member."""
