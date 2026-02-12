@@ -301,3 +301,21 @@ class BackendClient:
         
         result = await self._make_request("GET", "/features/check", params=params)
         return result.get("enabled", False) if result.get("success", False) else False
+
+    # Additional methods for callback handlers
+    async def get_pending_deposits(self, user_id: int) -> Dict[str, Any]:
+        """Get pending security deposits for a user."""
+        return await self._make_request("GET", f"/members/{user_id}/pending-deposits")
+    
+    async def get_deposit_details(self, deposit_id: str) -> Dict[str, Any]:
+        """Get details for a specific security deposit."""
+        return await self._make_request("GET", f"/deposits/{deposit_id}")
+    
+    async def get_full_report(self, user_id: int) -> Dict[str, Any]:
+        """Get comprehensive report for a user."""
+        return await self._make_request("GET", f"/members/{user_id}/full-report")
+    
+    async def generate_report(self, user_id: int, format_type: str) -> Dict[str, Any]:
+        """Generate and export a report in specified format."""
+        return await self._make_request("POST", f"/members/{user_id}/export-report", 
+                                       json={"format": format_type})
