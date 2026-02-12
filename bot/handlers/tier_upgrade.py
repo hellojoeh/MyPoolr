@@ -697,6 +697,249 @@ Ready to explore your new features?
     )
 
 
+async def handle_start_trial(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle starting a free trial for a tier."""
+    button_manager: ButtonManager = context.bot_data.get("button_manager")
+    query = update.callback_query
+    await query.answer()
+    
+    tier_id = query.data.replace("start_trial:", "")
+    
+    tier_names = {
+        "essential": "Essential",
+        "advanced": "Advanced",
+        "extended": "Extended"
+    }
+    
+    tier_name = tier_names.get(tier_id, "Essential")
+    trial_end = datetime.now() + timedelta(days=7)
+    
+    trial_text = f"""
+🆓 *7-Day Free Trial - {tier_name} Tier*
+
+*Trial Details:*
+• Duration: 7 days (ends {trial_end.strftime('%B %d, %Y')})
+• Full access to all {tier_name} features
+• No credit card required
+• Cancel anytime during trial
+• Auto-converts to paid after trial
+
+*What You Get During Trial:*
+✅ All {tier_name} tier features unlocked
+✅ Full member limits and group capacity
+✅ Priority support access
+✅ No restrictions or limitations
+
+*After Trial Ends:*
+• Automatic upgrade to {tier_name} tier
+• First payment via M-Pesa STK Push
+• Continue with all features unlocked
+• Or downgrade back to Starter (free)
+
+*Important Notes:*
+• You can only use one trial per tier
+• Trial starts immediately upon activation
+• Reminder sent 2 days before trial ends
+
+Ready to start your free trial?
+    """.strip()
+    
+    grid = button_manager.create_grid()
+    grid.add_row([
+        button_manager.create_button(
+            f"🚀 Start {tier_name} Trial Now",
+            f"confirm_trial:{tier_id}",
+            emoji="🚀"
+        )
+    ])
+    grid.add_row([
+        button_manager.create_button("💳 Skip Trial & Pay Now", f"initiate_payment:{tier_id}", emoji="💳"),
+        button_manager.create_button("📋 Trial Terms", f"trial_terms:{tier_id}", emoji="📋")
+    ])
+    grid.add_row([
+        button_manager.create_button("⬅️ Back", f"select_tier:{tier_id}", emoji="⬅️"),
+        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+    ])
+    
+    keyboard = button_manager.build_keyboard(grid)
+    
+    await query.edit_message_text(
+        text=trial_text,
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+
+
+async def handle_detailed_features(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle detailed feature breakdown for a tier."""
+    button_manager: ButtonManager = context.bot_data.get("button_manager")
+    query = update.callback_query
+    await query.answer()
+    
+    tier_id = query.data.replace("detailed_features:", "")
+    
+    feature_details = {
+        "essential": {
+            "name": "Essential",
+            "price": 2,
+            "categories": {
+                "📊 Group Management": [
+                    "Create up to 3 MyPoolr groups",
+                    "25 members per group maximum",
+                    "Custom group names & descriptions",
+                    "Group activity dashboard",
+                    "Member invitation system"
+                ],
+                "🔔 Notifications": [
+                    "Priority push notifications",
+                    "Payment reminders (24h, 6h, 1h)",
+                    "Rotation update alerts",
+                    "Security deposit notifications",
+                    "Email notification support"
+                ],
+                "💰 Financial Features": [
+                    "Automated contribution tracking",
+                    "Payment history & receipts",
+                    "Security deposit management",
+                    "Basic financial reports",
+                    "M-Pesa integration"
+                ],
+                "🛠️ Support & Tools": [
+                    "Email support (24-48h response)",
+                    "Basic analytics dashboard",
+                    "Member management tools",
+                    "Group settings customization",
+                    "Help center access"
+                ]
+            }
+        },
+        "advanced": {
+            "name": "Advanced",
+            "price": 5,
+            "categories": {
+                "📊 Group Management": [
+                    "Create up to 10 MyPoolr groups",
+                    "50 members per group maximum",
+                    "Custom rotation schedules",
+                    "Group templates & presets",
+                    "Bulk member management",
+                    "Advanced group settings"
+                ],
+                "🔔 Notifications": [
+                    "All Essential notifications, plus:",
+                    "Custom notification schedules",
+                    "SMS notifications (optional)",
+                    "Multi-channel alerts",
+                    "Notification preferences per group"
+                ],
+                "💰 Financial Features": [
+                    "All Essential features, plus:",
+                    "Advanced analytics & insights",
+                    "Export reports (PDF, Excel)",
+                    "Custom contribution schedules",
+                    "Financial forecasting",
+                    "Detailed transaction logs"
+                ],
+                "🛠️ Support & Tools": [
+                    "Priority support (4-12h response)",
+                    "Advanced analytics dashboard",
+                    "Custom reporting tools",
+                    "API access (basic)",
+                    "Integration options",
+                    "Training resources"
+                ]
+            }
+        },
+        "extended": {
+            "name": "Extended",
+            "price": 10,
+            "categories": {
+                "📊 Group Management": [
+                    "Unlimited MyPoolr groups",
+                    "Unlimited members per group",
+                    "White-label branding options",
+                    "Multi-admin management",
+                    "Enterprise-grade controls",
+                    "Custom workflows"
+                ],
+                "🔔 Notifications": [
+                    "All Advanced notifications, plus:",
+                    "Custom notification templates",
+                    "Branded notifications",
+                    "Advanced automation rules",
+                    "Integration with external systems"
+                ],
+                "💰 Financial Features": [
+                    "All Advanced features, plus:",
+                    "Custom reporting & dashboards",
+                    "Advanced compliance tools",
+                    "Audit trail & logging",
+                    "Financial API access",
+                    "Custom integrations"
+                ],
+                "🛠️ Support & Tools": [
+                    "Dedicated support manager",
+                    "24/7 priority support",
+                    "Custom feature development",
+                    "Full API access",
+                    "Advanced security features",
+                    "Compliance assistance",
+                    "Training & onboarding"
+                ]
+            }
+        }
+    }
+    
+    tier = feature_details.get(tier_id, feature_details["essential"])
+    
+    # Build feature list
+    feature_sections = []
+    for category, features in tier["categories"].items():
+        feature_list = "\n".join([f"  • {f}" for f in features])
+        feature_sections.append(f"{category}\n{feature_list}")
+    
+    features_text = f"""
+✨ *{tier['name']} Tier - Complete Features*
+
+*Price:* ${tier['price']}/month
+
+━━━━━━━━━━━━━━━━━━━━
+
+{chr(10).join(feature_sections)}
+
+━━━━━━━━━━━━━━━━━━━━
+
+💡 *All features activate immediately after payment*
+
+Ready to upgrade?
+    """.strip()
+    
+    grid = button_manager.create_grid()
+    grid.add_row([
+        button_manager.create_button(
+            f"🚀 Upgrade to {tier['name']}",
+            f"initiate_payment:{tier_id}",
+            emoji="🚀"
+        )
+    ])
+    grid.add_row([
+        button_manager.create_button("🆓 Start Free Trial", f"start_trial:{tier_id}", emoji="🆓"),
+        button_manager.create_button("⚖️ Compare Tiers", "compare_tiers", emoji="⚖️")
+    ])
+    grid.add_row([
+        button_manager.create_button("⬅️ Back", f"select_tier:{tier_id}", emoji="⬅️"),
+        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+    ])
+    
+    keyboard = button_manager.build_keyboard(grid)
+    
+    await query.edit_message_text(
+        text=features_text,
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+
+
 # Register callback handlers for tier upgrade
 def register_tier_upgrade_callbacks(button_manager: ButtonManager) -> None:
     """Register callback functions for tier upgrade."""
