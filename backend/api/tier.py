@@ -1,6 +1,7 @@
 """Tier management API endpoints."""
 
 from typing import Dict, List
+from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
@@ -20,6 +21,7 @@ from services.tier_upgrade_service import (
 from database import DatabaseManager
 
 router = APIRouter(prefix="/tier", tags=["tier"])
+db_manager = DatabaseManager()
 
 
 class TierInfoResponse(BaseModel):
@@ -338,3 +340,100 @@ async def handle_subscription_expiry(
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to handle subscription expiry: {str(e)}")
+
+
+
+class TrialActivationRequest(BaseModel):
+    """Request model for trial activation."""
+    tier: TierLevel
+    user_id: int
+
+
+@router.post("/trial/activate")
+async def activate_trial(
+    request: TrialActivationRequest,
+    tier_service: TierManagementService = Depends(get_tier_service)
+):
+    """Activate a free trial for a tier."""
+    try:
+        # Check if user already has an active trial
+        result = db_manager.client.table("tier_trials").select("*").eq(
+            "user_id", request.user_id
+        ).eq("tier", request.tier.value).execute()
+        
+        if result.data:
+            raise HTTPException(
+                status_code=400, 
+                detail="You have already used a trial for this tier"
+            )
+        
+        # Create trial record
+        trial_end = datetime.now() + timedelta(days=2)
+        trial_data = {
+            "user_id": request.user_id,
+            "tier": request.tier.value,
+            "started_at": datetime.now().isoformat(),
+            "ends_at": trial_end.isoformat(),
+            "is_active": True,
+            "converted_to_paid": False
+        }
+        
+        db_manager.client.table("tier_trials").insert(trial_data).execute()
+        
+        # Temporarily upgrade user to trial tier
+        db_manager.client.table("admins").update({
+            "tier": request.tier.value,
+            "tier_status": "trial",
+            "trial_ends_at": trial_end.isoformat()
+        }).eq("telegram_id", request.user_id).execute()
+        
+        return {
+            "success": True,
+            "message": f"Trial activated for {request.tier.value} tier",
+            "trial_ends_at": trial_end.isoformat(),
+            "tier": request.tier.value
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to activate trial: {str(e)}"
+        )
+
+
+@router.get("/trial/status/{user_id}")
+async def get_trial_status(
+    user_id: int,
+    tier_service: TierManagementService = Depends(get_tier_service)
+):
+    """Get trial status for a user."""
+    try:
+        result = db_manager.client.table("tier_trials").select("*").eq(
+            "user_id", user_id
+        ).eq("is_active", True).execute()
+        
+        if not result.data:
+            return {
+                "has_active_trial": False,
+                "trials_used": []
+            }
+        
+        active_trial = result.data[0]
+        trial_end = datetime.fromisoformat(active_trial["ends_at"])
+        
+        return {
+            "has_active_trial": True,
+            "tier": active_trial["tier"],
+            "started_at": active_trial["started_at"],
+            "ends_at": active_trial["ends_at"],
+            "days_remaining": (trial_end - datetime.now()).days,
+            "converted_to_paid": active_trial["converted_to_paid"]
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get trial status: {str(e)}"
+        )

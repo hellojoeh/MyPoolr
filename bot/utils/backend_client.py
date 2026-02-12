@@ -345,3 +345,65 @@ class BackendClient:
         """Generate and export a report in specified format."""
         return await self._make_request("POST", f"/members/{user_id}/export-report", 
                                        json={"format": format_type})
+
+    
+    # Tier and trial operations
+    async def activate_trial(self, user_id: int, tier: str) -> Dict[str, Any]:
+        """Activate a free trial for a tier."""
+        try:
+            result = await self._make_request("POST", "/tier/trial/activate", data={
+                "user_id": user_id,
+                "tier": tier
+            })
+            
+            # Handle error responses
+            if isinstance(result, dict) and not result.get("success", True):
+                return result
+            
+            # Success response
+            if isinstance(result, dict) and result.get("success"):
+                return result
+            
+            # Unexpected format
+            return {
+                "success": False,
+                "error": "invalid_response",
+                "message": "Unexpected response format from backend"
+            }
+        except Exception as e:
+            logger.error(f"Error activating trial: {e}")
+            return {
+                "success": False,
+                "error": "exception",
+                "message": str(e)
+            }
+    
+    async def get_trial_status(self, user_id: int) -> Dict[str, Any]:
+        """Get trial status for a user."""
+        try:
+            result = await self._make_request("GET", f"/tier/trial/status/{user_id}")
+            
+            # Handle error responses
+            if isinstance(result, dict) and not result.get("success", True):
+                return result
+            
+            # Success response
+            if isinstance(result, dict):
+                return {
+                    "success": True,
+                    **result
+                }
+            
+            # Unexpected format
+            return {
+                "success": False,
+                "error": "invalid_response",
+                "message": "Unexpected response format from backend"
+            }
+        except Exception as e:
+            logger.error(f"Error getting trial status: {e}")
+            return {
+                "success": False,
+                "error": "exception",
+                "message": str(e)
+            }

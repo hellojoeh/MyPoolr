@@ -958,10 +958,54 @@ async def handle_confirm_trial(update: Update, context: ContextTypes.DEFAULT_TYP
     }
     
     tier_name = tier_names.get(tier_id, "Essential")
-    trial_end = datetime.now() + timedelta(days=2)
     
-    # TODO: Call backend to activate trial
-    # result = await backend_client.activate_trial(user_id, tier_id)
+    # Call backend to activate trial
+    result = await backend_client.activate_trial(user_id, tier_id)
+    
+    if not result.get("success"):
+        error_message = result.get("message", "Failed to activate trial")
+        error_text = f"""
+❌ *Trial Activation Failed*
+
+{error_message}
+
+*Possible reasons:*
+• You may have already used a trial for this tier
+• System error occurred
+
+*What you can do:*
+• Try upgrading directly with payment
+• Contact support for assistance
+• Check your trial history
+
+Need help? Contact our support team.
+        """.strip()
+        
+        grid = button_manager.create_grid()
+        grid.add_row([
+            button_manager.create_button("💳 Pay Now Instead", f"initiate_payment:{tier_id}", emoji="💳"),
+            button_manager.create_button("💬 Contact Support", "contact_support", emoji="💬")
+        ])
+        grid.add_row([
+            button_manager.create_button("⬅️ Back", f"select_tier:{tier_id}", emoji="⬅️"),
+            button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+        ])
+        
+        keyboard = button_manager.build_keyboard(grid)
+        
+        await query.edit_message_text(
+            text=error_text,
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
+        return
+    
+    # Success - trial activated
+    trial_end_str = result.get("trial_ends_at", "")
+    try:
+        trial_end = datetime.fromisoformat(trial_end_str.replace('Z', '+00:00'))
+    except:
+        trial_end = datetime.now() + timedelta(days=2)
     
     confirmation_text = f"""
 🎉 *Trial Activated Successfully!*

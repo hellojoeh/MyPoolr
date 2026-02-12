@@ -98,6 +98,11 @@ class IntegrationManager:
                 logger.warning("M-Pesa configuration incomplete, service not initialized")
             
             # TODO: Add other payment providers (Flutterwave, etc.)
+            # Future payment providers to integrate:
+            # - Flutterwave (for card payments and other African countries)
+            # - PayPal (for international payments)
+            # - Stripe (for card payments)
+            # Each provider should implement the PaymentServiceInterface
             
         except Exception as e:
             logger.error(f"Payment services initialization failed: {e}")
