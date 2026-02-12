@@ -10,6 +10,7 @@ from utils.state_manager import StateManager, ConversationState
 from utils.ui_components import InteractiveCard, UIContext, ProgressIndicator
 from utils.formatters import MessageFormatter, EmojiHelper
 from utils.feedback_system import VisualFeedbackManager
+from utils.backend_client import BackendClient
 
 
 async def handle_tier_upgrade_main(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -777,6 +778,333 @@ async def handle_detailed_features(update: Update, context: ContextTypes.DEFAULT
     await query.answer()
     
     tier_id = query.data.replace("detailed_features:", "")
+    
+    feature_details = {
+        "essential": {
+            "name": "Essential",
+            "price": 2,
+            "categories": {
+                "📊 Group Management": [
+                    "Create up to 3 MyPoolr groups",
+                    "25 members per group maximum",
+                    "Custom group names & descriptions",
+                    "Group activity dashboard",
+                    "Member invitation system"
+                ],
+                "🔔 Notifications": [
+                    "Priority push notifications",
+                    "Payment reminders (24h, 6h, 1h)",
+                    "Rotation update alerts",
+                    "Security deposit notifications",
+                    "Email notification support"
+                ],
+                "💰 Financial Features": [
+                    "Automated contribution tracking",
+                    "Payment history & receipts",
+                    "Security deposit management",
+                    "Basic financial reports",
+                    "M-Pesa integration"
+                ],
+                "🛠️ Support & Tools": [
+                    "Email support (24-48h response)",
+                    "Basic analytics dashboard",
+                    "Member management tools",
+                    "Group settings customization",
+                    "Help center access"
+                ]
+            }
+        },
+        "advanced": {
+            "name": "Advanced",
+            "price": 5,
+            "categories": {
+                "📊 Group Management": [
+                    "Create up to 10 MyPoolr groups",
+                    "50 members per group maximum",
+                    "Custom rotation schedules",
+                    "Group templates & presets",
+                    "Bulk member management",
+                    "Advanced group settings"
+                ],
+                "🔔 Notifications": [
+                    "All Essential notifications, plus:",
+                    "Custom notification schedules",
+                    "SMS notifications (optional)",
+                    "Multi-channel alerts",
+                    "Notification preferences per group"
+                ],
+                "💰 Financial Features": [
+                    "All Essential features, plus:",
+                    "Advanced analytics & insights",
+                    "Export reports (PDF, Excel)",
+                    "Custom contribution schedules",
+                    "Financial forecasting",
+                    "Detailed transaction logs"
+                ],
+                "🛠️ Support & Tools": [
+                    "Priority support (4-12h response)",
+                    "Advanced analytics dashboard",
+                    "Custom reporting tools",
+                    "API access (basic)",
+                    "Integration options",
+                    "Training resources"
+                ]
+            }
+        },
+        "extended": {
+            "name": "Extended",
+            "price": 10,
+            "categories": {
+                "📊 Group Management": [
+                    "Unlimited MyPoolr groups",
+                    "Unlimited members per group",
+                    "White-label branding options",
+                    "Multi-admin management",
+                    "Enterprise-grade controls",
+                    "Custom workflows"
+                ],
+                "🔔 Notifications": [
+                    "All Advanced notifications, plus:",
+                    "Custom notification templates",
+                    "Branded notifications",
+                    "Advanced automation rules",
+                    "Integration with external systems"
+                ],
+                "💰 Financial Features": [
+                    "All Advanced features, plus:",
+                    "Custom reporting & dashboards",
+                    "Advanced compliance tools",
+                    "Audit trail & logging",
+                    "Financial API access",
+                    "Custom integrations"
+                ],
+                "🛠️ Support & Tools": [
+                    "Dedicated support manager",
+                    "24/7 priority support",
+                    "Custom feature development",
+                    "Full API access",
+                    "Advanced security features",
+                    "Compliance assistance",
+                    "Training & onboarding"
+                ]
+            }
+        }
+    }
+    
+    tier = feature_details.get(tier_id, feature_details["essential"])
+    
+    # Build feature list
+    feature_sections = []
+    for category, features in tier["categories"].items():
+        feature_list = "\n".join([f"  • {f}" for f in features])
+        feature_sections.append(f"{category}\n{feature_list}")
+    
+    features_text = f"""
+✨ *{tier['name']} Tier - Complete Features*
+
+*Price:* ${tier['price']}/month
+
+━━━━━━━━━━━━━━━━━━━━
+
+{chr(10).join(feature_sections)}
+
+━━━━━━━━━━━━━━━━━━━━
+
+💡 *All features activate immediately after payment*
+
+Ready to upgrade?
+    """.strip()
+    
+    grid = button_manager.create_grid()
+    grid.add_row([
+        button_manager.create_button(
+            f"🚀 Upgrade to {tier['name']}",
+            f"initiate_payment:{tier_id}",
+            emoji="🚀"
+        )
+    ])
+    grid.add_row([
+        button_manager.create_button("🆓 Start Free Trial", f"start_trial:{tier_id}", emoji="🆓"),
+        button_manager.create_button("⚖️ Compare Tiers", "compare_tiers", emoji="⚖️")
+    ])
+    grid.add_row([
+        button_manager.create_button("⬅️ Back", f"select_tier:{tier_id}", emoji="⬅️"),
+        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+    ])
+    
+    keyboard = button_manager.build_keyboard(grid)
+    
+    await query.edit_message_text(
+        text=features_text,
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+
+
+async def handle_confirm_trial(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle trial confirmation and activation."""
+    button_manager: ButtonManager = context.bot_data.get("button_manager")
+    backend_client: BackendClient = context.bot_data.get("backend_client")
+    query = update.callback_query
+    await query.answer()
+    
+    tier_id = query.data.replace("confirm_trial:", "")
+    user_id = update.effective_user.id
+    
+    tier_names = {
+        "essential": "Essential",
+        "advanced": "Advanced",
+        "extended": "Extended"
+    }
+    
+    tier_name = tier_names.get(tier_id, "Essential")
+    trial_end = datetime.now() + timedelta(days=2)
+    
+    # TODO: Call backend to activate trial
+    # result = await backend_client.activate_trial(user_id, tier_id)
+    
+    confirmation_text = f"""
+🎉 *Trial Activated Successfully!*
+
+*{tier_name} Tier - 2-Day Free Trial*
+
+✅ Your trial is now active!
+
+*Trial Period:*
+• Started: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
+• Ends: {trial_end.strftime('%B %d, %Y at %I:%M %p')}
+• Duration: 2 days
+
+*What's Unlocked:*
+✨ All {tier_name} tier features
+✨ Full member and group limits
+✨ Priority support access
+✨ Advanced analytics
+
+*Important Reminders:*
+• We'll notify you 1 day before trial ends
+• After trial: Auto-upgrade to paid subscription
+• Cancel anytime during trial period
+• No charges until trial ends
+
+*Next Steps:*
+1. Explore your new features
+2. Create additional groups
+3. Invite more members
+4. Try advanced analytics
+
+Enjoy your trial! 🚀
+    """.strip()
+    
+    grid = button_manager.create_grid()
+    grid.add_row([
+        button_manager.create_button("🎯 Create New Group", "create_mypoolr", emoji="🎯"),
+        button_manager.create_button("👥 My Groups", "my_groups", emoji="👥")
+    ])
+    grid.add_row([
+        button_manager.create_button("📊 View Features", f"detailed_features:{tier_id}", emoji="📊"),
+        button_manager.create_button("⚙️ Settings", "settings", emoji="⚙️")
+    ])
+    grid.add_row([
+        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+    ])
+    
+    keyboard = button_manager.build_keyboard(grid)
+    
+    await query.edit_message_text(
+        text=confirmation_text,
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+
+
+async def handle_trial_terms(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle trial terms and conditions display."""
+    button_manager: ButtonManager = context.bot_data.get("button_manager")
+    query = update.callback_query
+    await query.answer()
+    
+    tier_id = query.data.replace("trial_terms:", "")
+    
+    tier_prices = {
+        "essential": 2,
+        "advanced": 5,
+        "extended": 10
+    }
+    
+    price = tier_prices.get(tier_id, 2)
+    kes_price = price * 130
+    
+    terms_text = f"""
+📋 *Free Trial Terms & Conditions*
+
+*Trial Period:*
+• Duration: 2 days from activation
+• Full feature access during trial
+• No payment required to start
+• One trial per tier per user
+
+*After Trial Ends:*
+• Automatic conversion to paid subscription
+• First payment: KES {kes_price:,} (${price} USD)
+• Monthly billing cycle begins
+• M-Pesa STK Push for payment
+
+*Cancellation Policy:*
+• Cancel anytime during trial period
+• No charges if cancelled before trial ends
+• Instant downgrade to Starter (free) tier
+• All data preserved after cancellation
+
+*Payment Terms:*
+• Monthly subscription billing
+• Charged to M-Pesa phone number
+• Auto-renewal each month
+• Cancel subscription anytime
+
+*Feature Access:*
+• Immediate activation upon trial start
+• Full access to all tier features
+• No feature restrictions during trial
+• Features remain after paid conversion
+
+*Notifications:*
+• Trial start confirmation
+• Reminder 1 day before trial ends
+• Payment confirmation after trial
+• Monthly billing reminders
+
+*Refund Policy:*
+• No refunds for completed months
+• Pro-rated refunds not available
+• Cancel before next billing cycle
+• Contact support for special cases
+
+*Data & Privacy:*
+• All data encrypted and secure
+• No data loss on tier changes
+• Export data anytime
+• GDPR compliant
+
+By starting the trial, you agree to these terms.
+    """.strip()
+    
+    grid = button_manager.create_grid()
+    grid.add_row([
+        button_manager.create_button("✅ Accept & Start Trial", f"confirm_trial:{tier_id}", emoji="✅")
+    ])
+    grid.add_row([
+        button_manager.create_button("⬅️ Back", f"start_trial:{tier_id}", emoji="⬅️"),
+        button_manager.create_button("🏠 Main Menu", "main_menu", emoji="🏠")
+    ])
+    
+    keyboard = button_manager.build_keyboard(grid)
+    
+    await query.edit_message_text(
+        text=terms_text,
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
     
     feature_details = {
         "essential": {

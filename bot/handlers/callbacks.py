@@ -44,7 +44,9 @@ from .tier_upgrade import (
     handle_upgrade_status_tracking,
     handle_feature_unlock_celebration,
     handle_start_trial,
-    handle_detailed_features
+    handle_detailed_features,
+    handle_confirm_trial,
+    handle_trial_terms
 )
 
 
@@ -220,6 +222,10 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await handle_tier_selection(update, context)
     elif callback_data.startswith("start_trial:"):
         await handle_start_trial(update, context)
+    elif callback_data.startswith("confirm_trial:"):
+        await handle_confirm_trial(update, context)
+    elif callback_data.startswith("trial_terms:"):
+        await handle_trial_terms(update, context)
     elif callback_data.startswith("detailed_features:"):
         await handle_detailed_features(update, context)
     elif callback_data.startswith("initiate_payment:"):
