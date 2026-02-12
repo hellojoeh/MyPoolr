@@ -180,7 +180,7 @@ async def handle_tier_selection(update: Update, context: ContextTypes.DEFAULT_TY
 • Monthly billing: ${tier['price']}/month
 • Billed to M-Pesa: KES {tier['price'] * 130}/month
 • Cancel anytime, no contracts
-• 7-day free trial included
+• 2-day free trial included
 
 🚀 *Instant Activation:*
 Features unlock immediately after payment confirmation!
@@ -712,13 +712,13 @@ async def handle_start_trial(update: Update, context: ContextTypes.DEFAULT_TYPE)
     }
     
     tier_name = tier_names.get(tier_id, "Essential")
-    trial_end = datetime.now() + timedelta(days=7)
+    trial_end = datetime.now() + timedelta(days=2)
     
     trial_text = f"""
-🆓 *7-Day Free Trial - {tier_name} Tier*
+🆓 *2-Day Free Trial - {tier_name} Tier*
 
 *Trial Details:*
-• Duration: 7 days (ends {trial_end.strftime('%B %d, %Y')})
+• Duration: 2 days (ends {trial_end.strftime('%B %d, %Y')})
 • Full access to all {tier_name} features
 • No credit card required
 • Cancel anytime during trial
@@ -739,7 +739,7 @@ async def handle_start_trial(update: Update, context: ContextTypes.DEFAULT_TYPE)
 *Important Notes:*
 • You can only use one trial per tier
 • Trial starts immediately upon activation
-• Reminder sent 2 days before trial ends
+• Reminder sent 1 day before trial ends
 
 Ready to start your free trial?
     """.strip()
